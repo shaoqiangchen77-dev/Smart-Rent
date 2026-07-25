@@ -27,7 +27,7 @@ export const mockHouses: HouseItem[] = [
     collectCount: 36,
     avgRating: 4.8,
     reviewCount: 19,
-    images: ['https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=900&q=80'],
+    images: ['https://smart-rent.oss-cn-beijing.aliyuncs.com/house/images/g1.png'],
     tags: ['近地铁', '采光好', '可长租'],
   },
   {
@@ -56,7 +56,7 @@ export const mockHouses: HouseItem[] = [
     collectCount: 22,
     avgRating: 4.6,
     reviewCount: 12,
-    images: ['https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=900&q=80'],
+    images: ['https://smart-rent.oss-cn-beijing.aliyuncs.com/house/images/g2.png'],
     tags: ['可养宠', '独立阳台', '公园旁'],
   },
   {
@@ -85,7 +85,7 @@ export const mockHouses: HouseItem[] = [
     collectCount: 44,
     avgRating: 4.5,
     reviewCount: 27,
-    images: ['https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=900&q=80'],
+    images: ['https://smart-rent.oss-cn-beijing.aliyuncs.com/house/images/g3.png'],
     tags: ['合租', '通勤友好', '性价比'],
   },
 ]

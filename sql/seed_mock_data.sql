@@ -33,9 +33,9 @@ VALUES
 
 -- ============ 3) 房源图片 (house_db.house_image) ============
 INSERT INTO house_db.house_image (house_id, image_url, image_type, sort_order) VALUES
-(9001, 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=900&q=80', 'exterior', 0),
-(9002, 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=900&q=80', 'exterior', 0),
-(9003, 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=900&q=80', 'exterior', 0);
+(9001, 'https://smart-rent.oss-cn-beijing.aliyuncs.com/house/images/g1.png', 'exterior', 0),
+(9002, 'https://smart-rent.oss-cn-beijing.aliyuncs.com/house/images/g2.png', 'exterior', 0),
+(9003, 'https://smart-rent.oss-cn-beijing.aliyuncs.com/house/images/g3.png', 'exterior', 0);
 
 -- ============ 4) 房源标签 (house_db.house_tag) ============
 INSERT INTO house_db.house_tag (house_id, tag_name, tag_type) VALUES
