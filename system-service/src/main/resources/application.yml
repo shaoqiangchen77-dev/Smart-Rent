@@ -1,0 +1,57 @@
+server:
+  port: 8081
+  error:
+    include-stacktrace: always
+    include-message: always
+
+spring:
+  application:
+    name: system-service
+  datasource:
+    url: jdbc:mysql://127.0.0.1:3306/system_db?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
+    username: root
+    password: 1234
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848
+        enabled: false
+      config:
+        server-addr: 127.0.0.1:8848
+        file-extension: yml
+        import-check:
+          enabled: false
+  rabbitmq:
+    host: 127.0.0.1
+    port: 5672
+    username: guest
+    password: guest
+
+house:
+  service:
+    url: http://localhost:8082
+
+mybatis-plus:
+  mapper-locations: classpath:mapper/**/*.xml
+  global-config:
+    db-config:
+      id-type: auto
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+sa-token:
+  token-name: Authorization
+  timeout: 86400
+  is-concurrent: true
+  is-share: true
+  token-style: uuid
+
+wechat:
+  appid: ${WX_APPID:your-appid}
+  secret: ${WX_SECRET:your-secret}

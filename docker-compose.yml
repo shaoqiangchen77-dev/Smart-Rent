@@ -1,0 +1,49 @@
+# 智能租房系统 - 本地依赖服务编排
+# 仅用 Docker 托管 Redis（后端服务的必需依赖：Sa-Token 分布式会话存储）
+#
+# 用法（在項目根目录执行）：
+#   docker compose up -d        # 后台启动 Redis
+#   docker compose down         # 停止并移除容器（数据卷保留）
+#   docker compose logs -f redis # 查看日志
+#
+# 说明：
+#   - 后端各服务(IDE 直接启动)运行在宿主机，通过 127.0.0.1:6379 访问本容器，无需改任何代码。
+#   - 系统服务 application.yml 已配置 spring.data.redis.host=127.0.0.1 / port=6379，与此映射一致。
+#   - 数据持久化在命名卷 redis-data 中，重启容器不丢数据。
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: smart-rent-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  redis-data:
+
+  # ===== 可选：若想把 MySQL 也交给 Docker（会新建空库，需重新导入 sql/*.sql）=====
+  # 默认注释掉，避免覆盖你本地已运行的 MySQL(root/1234) 及已有数据。
+  # mysql:
+  #   image: mysql:8.0
+  #   container_name: smart-rent-mysql
+  #   restart: unless-stopped
+  #   environment:
+  #     MYSQL_ROOT_PASSWORD: "1234"
+  #     MYSQL_DATABASE: "system_db"
+  #     TZ: "Asia/Shanghai"
+  #   ports:
+  #     - "3306:3306"
+  #   command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
+  #   volumes:
+  #     - mysql-data:/var/lib/mysql
+  # volumes:
+  #   mysql-data:

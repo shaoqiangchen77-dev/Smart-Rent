@@ -1,0 +1,152 @@
+{
+  "pages": [
+    {
+      "path": "pages/index/index",
+      "style": {
+        "navigationBarTitleText": "智能租房",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
+      "path": "pages/login/login",
+      "style": {
+        "navigationBarTitleText": "登录"
+      }
+    },
+    {
+      "path": "pages/house/detail",
+      "style": {
+        "navigationBarTitleText": "房源详情"
+      }
+    },
+    {
+      "path": "pages/house/search",
+      "style": {
+        "navigationBarTitleText": "搜索房源"
+      }
+    },
+    {
+      "path": "pages/agent/chat",
+      "style": {
+        "navigationBarTitleText": "智能找房助手"
+      }
+    },
+    {
+      "path": "pages/house/appointment",
+      "style": {
+        "navigationBarTitleText": "预约看房"
+      }
+    },
+    {
+      "path": "pages/message/list",
+      "style": {
+        "navigationBarTitleText": "消息中心"
+      }
+    },
+    {
+      "path": "pages/my/index",
+      "style": {
+        "navigationBarTitleText": "我的"
+      }
+    },
+    {
+      "path": "pages/my/contract",
+      "style": {
+        "navigationBarTitleText": "我的合同"
+      }
+    },
+    {
+      "path": "pages/my/contract-detail",
+      "style": {
+        "navigationBarTitleText": "合同详情"
+      }
+    },
+    {
+      "path": "pages/my/bill",
+      "style": {
+        "navigationBarTitleText": "我的账单"
+      }
+    },
+    {
+      "path": "pages/my/collection",
+      "style": {
+        "navigationBarTitleText": "我的收藏"
+      }
+    },
+    {
+      "path": "pages/my/history",
+      "style": {
+        "navigationBarTitleText": "浏览记录"
+      }
+    },
+    {
+      "path": "pages/my/preference",
+      "style": {
+        "navigationBarTitleText": "偏好设置"
+      }
+    },
+    {
+      "path": "pages/landlord/dashboard",
+      "style": {
+        "navigationBarTitleText": "房东工作台",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
+      "path": "pages/landlord/publish",
+      "style": {
+        "navigationBarTitleText": "发布房源"
+      }
+    },
+    {
+      "path": "pages/landlord/appointments",
+      "style": {
+        "navigationBarTitleText": "看房预约"
+      }
+    },
+    {
+      "path": "pages/house/review",
+      "style": {
+        "navigationBarTitleText": "评价房源"
+      }
+    }
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "智能租房",
+    "navigationBarBackgroundColor": "#ffffff",
+    "backgroundColor": "#f5f5f5"
+  },
+  "tabBar": {
+    "color": "#999999",
+    "selectedColor": "#b08a3a",
+    "borderStyle": "black",
+    "backgroundColor": "#ffffff",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "iconPath": "static/tab-home.png",
+        "selectedIconPath": "static/tab-home-active.png",
+        "text": "首页"
+      },
+      {
+        "pagePath": "pages/agent/chat",
+        "iconPath": "static/tab-agent.png",
+        "selectedIconPath": "static/tab-agent-active.png",
+        "text": "助手"
+      },
+      {
+        "pagePath": "pages/message/list",
+        "iconPath": "static/tab-message.png",
+        "selectedIconPath": "static/tab-message-active.png",
+        "text": "消息"
+      },
+      {
+        "pagePath": "pages/my/index",
+        "iconPath": "static/tab-my.png",
+        "selectedIconPath": "static/tab-my-active.png",
+        "text": "我的"
+      }
+    ]
+  }
+}

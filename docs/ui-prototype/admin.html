@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>智居 · 运营后台</title>
+<style>
+  :root{
+    --bg:#f6f2ea; --bg-2:#efe8da; --surface:#fffdf8; --surface-2:#f3ecdf;
+    --line:rgba(168,128,40,.15); --line-strong:rgba(168,128,40,.34);
+    --gold:#9c7a2e; --gold-2:#b08a3a; --gold-3:#9c7a2e;
+    --grad-gold:linear-gradient(135deg,#b08a3a,#d6c088);
+    --txt:#241f18; --txt-2:#6b6459; --txt-3:#9a9183;
+    --ok:#4f9e74; --warn:#bd8440; --bad:#c75d5d; --info:#5a8bb0;
+    --r:16px; --r-sm:10px;
+    --shadow:0 20px 50px -20px rgba(60,45,20,.18);
+    --sb:#b08a3a;
+    --glass:rgba(255,253,248,.74); --glass-solid:rgba(255,253,248,.92); --glass-2:rgba(243,236,223,.6);
+  }
+  /* ---------------- 暗色主题 ---------------- */
+  :root[data-theme="dark"]{
+    --bg:#16140f; --bg-2:#1d1a14; --surface:#221f18; --surface-2:#2a261d;
+    --line:rgba(200,160,80,.14); --line-strong:rgba(200,160,80,.32);
+    --gold:#c2a468; --gold-2:#d4bd82; --gold-3:#c2a468;
+    --grad-gold:linear-gradient(135deg,#c2a468,#e3d2a0);
+    --txt:#efe9dc; --txt-2:#b3a892; --txt-3:#8a8068;
+    --ok:#5aa883; --warn:#c8924a; --bad:#d47070; --info:#6f9ec2;
+    --shadow:0 24px 60px -20px rgba(0,0,0,.6);
+    --sb:#d4bd82;
+    --glass:rgba(34,31,24,.66); --glass-solid:rgba(22,20,16,.94); --glass-2:rgba(42,38,29,.6);
+  }
+  :root[data-theme="dark"] .grad-txt{background:linear-gradient(120deg,var(--gold-2),var(--gold))}
+  :root[data-theme="dark"] .chip.on{background:rgba(200,160,80,.16);border-color:rgba(200,160,80,.4);color:var(--gold-2)}
+  :root[data-theme="dark"] .menu button.on{background:linear-gradient(90deg,rgba(200,160,80,.18),transparent);color:var(--gold-2)}
+  :root[data-theme="dark"] .nav-i.on{background:linear-gradient(135deg,rgba(200,160,80,.2),rgba(200,160,80,.08))}
+  :root[data-theme="dark"] .seg button.on{color:#1c1810}
+  :root[data-theme="dark"] tbody td{border-bottom:1px solid rgba(255,255,255,.06)}
+  :root[data-theme="dark"] .t-mut{background:rgba(255,255,255,.06);color:var(--txt-3)}
+  :root[data-theme="dark"] .hero-band{background:linear-gradient(120deg,rgba(200,160,80,.12),rgba(34,31,24,.7))}
+  :root[data-theme="dark"] .topbar{background:linear-gradient(var(--bg),rgba(22,20,16,0))}
+  :root[data-theme="dark"] .field .input-box{background:rgba(255,255,255,.06)}
+  :root[data-theme="dark"] .field .input-box:focus-within{background:rgba(255,255,255,.1)}
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    background:var(--bg); color:var(--txt); letter-spacing:.2px;
+    -webkit-font-smoothing:antialiased; overflow:hidden;
+  }
+  .serif{font-family:"Songti SC","STSong",Georgia,"Times New Roman",serif}
+  .gold{color:var(--gold-2)}
+  .grad-txt{background:linear-gradient(120deg,var(--gold-2),var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .mono{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+  button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+  ::-webkit-scrollbar{width:8px;height:8px}
+  ::-webkit-scrollbar-thumb{background:rgba(168,128,40,.18);border-radius:8px}
+  ::-webkit-scrollbar-track{background:transparent}
+
+  /* ============ LOGIN (split: 真实大图 + 玻璃卡) ============ */
+  #login{position:fixed;inset:0;z-index:50;display:flex}
+  .login-hero{position:relative;flex:1.25;overflow:hidden;background:#0b0e15}
+  .hero-slides{position:absolute;inset:-4%;transform:scale(1.08);transition:transform .25s ease-out;will-change:transform}
+  .hero-slide{position:absolute;inset:0;background-size:cover;background-position:center;opacity:0;transition:opacity 1.3s ease}
+  .hero-slide.active{opacity:1}
+  .hero-overlay{position:absolute;inset:0;z-index:1;
+    background:linear-gradient(180deg,rgba(8,11,17,.15) 0%,rgba(8,11,17,.05) 38%,rgba(8,11,17,.78) 100%),
+               linear-gradient(90deg,rgba(8,11,17,.35),transparent 60%)}
+  .hero-content{position:absolute;left:0;right:0;bottom:0;z-index:2;padding:0 5vw 7vh;color:#f5efe1}
+  .hero-badge{display:inline-flex;align-items:center;gap:8px;padding:7px 15px;border-radius:30px;
+    border:1px solid rgba(231,207,142,.4);background:rgba(231,207,142,.08);color:#e7cf8e;font-size:12px;letter-spacing:2px}
+  .hero-content h1{font-size:min(44px,4.4vw);line-height:1.18;margin:22px 0 16px;font-weight:700;letter-spacing:1px;text-shadow:0 4px 24px rgba(0,0,0,.4)}
+  .hero-content h1 em{font-style:normal;background:linear-gradient(120deg,#e7cf8e,#c9a227);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero-content p{color:rgba(245,239,225,.78);font-size:14.5px;max-width:420px;line-height:1.8}
+  .hero-dots{display:flex;gap:9px;margin-top:30px}
+  .hero-dots i{width:30px;height:4px;border-radius:4px;background:rgba(245,239,225,.28);transition:.4s;cursor:pointer}
+  .hero-dots i.on{background:var(--grad-gold);width:46px}
+  .hero-cap{position:absolute;top:6vh;right:5vw;z-index:2;color:rgba(245,239,225,.6);font-size:12px;letter-spacing:2px;text-align:right}
+  .login-panel{flex:1;display:flex;align-items:center;justify-content:center;background:radial-gradient(120% 120% at 50% 0,#fbf7ee,#efe6d4);padding:30px}
+  .login-card{position:relative;width:100%;max-width:380px;padding:38px 34px;border-radius:24px;overflow:hidden;
+    background:var(--glass);backdrop-filter:blur(22px) saturate(140%);-webkit-backdrop-filter:blur(22px) saturate(140%);
+    border:1px solid rgba(255,255,255,.7);box-shadow:0 30px 70px -28px rgba(60,45,20,.4);color:var(--txt);
+    opacity:0;transform:translateY(26px);animation:rise .9s cubic-bezier(.2,.8,.2,1) .25s forwards}
+  @keyframes rise{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:none}}
+  .login-card::before{content:"";position:absolute;inset:0;border-radius:24px;pointer-events:none;z-index:0;
+    background:radial-gradient(360px circle at var(--mx,50%) var(--my,16%),rgba(184,128,42,.16),transparent 60%);transition:background .15s ease-out}
+  .login-card > *{position:relative;z-index:1}
+  .login-card .brand{display:flex;align-items:center;gap:12px;margin-bottom:26px}
+  .login-card .mark{width:42px;height:42px;border-radius:13px;background:var(--grad-gold);display:grid;place-items:center;font-weight:800;color:#2a2113;font-size:20px;box-shadow:0 8px 22px -8px rgba(168,128,40,.6)}
+  .login-card .brand h2{font-size:17px;letter-spacing:2px;color:#2a2113}
+  .login-card .brand small{display:block;color:var(--gold);font-size:10px;letter-spacing:3px;margin-top:2px}
+  .login-card .welcome{font-size:22px;font-weight:700;color:#241f18;margin-bottom:6px}
+  .login-card .sub{color:var(--txt-3);font-size:13px;margin-bottom:26px}
+  .field{position:relative;margin-bottom:16px}
+  .field label{display:block;font-size:12px;color:var(--txt-2);letter-spacing:1px;margin:0 0 7px 2px}
+  .field .input-box{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.7);border:1px solid var(--line);border-radius:13px;padding:0 14px;transition:.25s}
+  .field .input-box:focus-within{border-color:var(--gold);background:#fff;box-shadow:0 0 0 4px rgba(184,128,42,.1)}
+  .field .ic{color:var(--gold);font-size:15px}
+  .field input{flex:1;width:100%;padding:14px 0;background:none;border:none;outline:none;color:var(--txt);font-size:14px}
+  .field input::placeholder{color:var(--txt-3)}
+  .pw-toggle{width:34px;height:34px;flex:none;border:none;background:none;color:var(--txt-3);cursor:pointer;display:grid;place-items:center;border-radius:9px;transition:.2s}
+  .pw-toggle:hover{color:var(--gold-2);background:rgba(184,128,42,.1)}
+  .pw-toggle svg{width:19px;height:19px}
+  .pw-toggle.on{color:var(--gold-2)}
+  .login-card .row{display:flex;align-items:center;justify-content:space-between;margin:2px 0 22px;font-size:12px;color:var(--txt-2)}
+  .login-card .row label{display:flex;gap:7px;align-items:center;cursor:pointer}
+  .login-card .row a{color:var(--gold);text-decoration:none}
+  .btn-gold{width:100%;padding:15px;border-radius:13px;background:var(--grad-gold);color:#2a2113;font-weight:700;letter-spacing:3px;font-size:14px;transition:.25s;position:relative;overflow:hidden}
+  .btn-gold:hover{transform:translateY(-2px);box-shadow:0 16px 34px -12px rgba(168,128,40,.7)}
+  .btn-gold:disabled{opacity:.75;cursor:default;transform:none}
+  .btn-gold .shimmer{position:absolute;inset:0;background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.55) 50%,transparent 70%);transform:translateX(-120%);animation:shim 2.6s ease-in-out infinite}
+  @keyframes shim{0%,60%{transform:translateX(-120%)}100%{transform:translateX(120%)}}
+  .login-foot{margin-top:18px;text-align:center;color:var(--txt-3);font-size:11px;letter-spacing:1px}
+  @media(max-width:880px){.login-hero{display:none}.login-panel{flex:1}}
+
+  /* ============ APP SHELL ============ */
+  #app{display:none;height:100vh;position:relative}
+  /* 背景极淡金光 */
+  .app-glow{position:fixed;inset:0;z-index:0;pointer-events:none;
+    background:radial-gradient(60vw 60vw at 88% -10%,rgba(212,175,55,.10),transparent 60%),
+               radial-gradient(50vw 50vw at -5% 100%,rgba(184,128,42,.08),transparent 55%)}
+  .glass{background:var(--glass);backdrop-filter:blur(16px) saturate(140%);-webkit-backdrop-filter:blur(16px) saturate(140%);border:1px solid var(--line)}
+
+  /* rail */
+  .rail{position:fixed;left:0;top:0;bottom:0;width:84px;z-index:20;display:flex;flex-direction:column;align-items:center;padding:18px 0;
+    background:var(--glass);backdrop-filter:blur(18px);border-right:1px solid var(--line)}
+  .rail .logo{width:42px;height:42px;border-radius:13px;background:var(--grad-gold);display:grid;place-items:center;font-weight:800;color:#2a2113;margin-bottom:26px;box-shadow:0 8px 22px -8px rgba(168,128,40,.6)}
+  .nav-i{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;color:var(--txt-3);font-size:20px;margin-bottom:10px;transition:.25s;position:relative}
+  .nav-i:hover{color:var(--gold-2);background:rgba(168,128,40,.1)}
+  .nav-i.on{color:var(--gold-2);background:linear-gradient(135deg,rgba(212,175,55,.22),rgba(184,128,42,.1));box-shadow:0 8px 20px -10px rgba(168,128,40,.5)}
+  .nav-i.on::before{content:"";position:absolute;left:-18px;top:14px;bottom:14px;width:3px;border-radius:3px;background:var(--grad-gold)}
+  .rail .me{margin-top:auto;width:42px;height:42px;border-radius:50%;background:var(--grad-gold);display:grid;place-items:center;color:#2a2113;font-size:13px;font-weight:700;box-shadow:0 6px 16px -8px rgba(168,128,40,.6)}
+
+  /* side */
+  .side{position:fixed;left:84px;top:0;bottom:0;width:218px;background:var(--bg-2);border-right:1px solid var(--line);padding:26px 16px;z-index:18}
+  .side h2{font-size:12px;letter-spacing:5px;color:var(--txt-3);margin:0 8px 18px;font-weight:600}
+  .menu{display:flex;flex-direction:column;gap:5px}
+  .menu button{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:11px;color:var(--txt-2);font-size:13.5px;transition:.2s;position:relative}
+  .menu button svg{color:var(--txt-3);transition:.2s;flex-shrink:0}
+  .menu button:hover{background:var(--surface);color:var(--txt)}
+  .menu button:hover svg{color:var(--gold-2)}
+  .menu button.on{background:linear-gradient(90deg,rgba(168,128,40,.16),transparent);color:var(--gold-2);font-weight:600}
+  .menu button.on svg{color:var(--gold-2)}
+
+  /* main */
+  .main{margin-left:302px;height:100vh;overflow-y:auto;padding:0 36px 60px;position:relative;z-index:1}
+  .topbar{position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:20px 0 18px;
+    background:linear-gradient(180deg,var(--bg) 68%,transparent);backdrop-filter:blur(6px)}
+  .crumb{font-size:12px;color:var(--txt-3);letter-spacing:1px}
+  .crumb b{color:var(--txt);font-weight:600}
+  .topbar .right{display:flex;align-items:center;gap:12px}
+  .search{display:flex;align-items:center;gap:8px;background:var(--glass);border:1px solid var(--line);padding:9px 14px;border-radius:12px;color:var(--txt-3);font-size:13px;min-width:210px;transition:.2s}
+  .search:focus-within{border-color:var(--line-strong);box-shadow:0 0 0 4px rgba(184,128,42,.08)}
+  .search input{background:none;border:none;color:var(--txt);outline:none;font-size:13px;width:100%}
+  .icon-btn{position:relative;width:40px;height:40px;border-radius:12px;background:var(--glass);border:1px solid var(--line);display:grid;place-items:center;color:var(--gold-2);font-size:17px;transition:.2s}
+  .icon-btn:hover{background:var(--surface-2);border-color:var(--line-strong);transform:translateY(-1px)}
+  .icon-btn .badge{position:absolute;top:-4px;right:-4px;background:var(--bad);color:#fff;font-size:10px;min-width:16px;height:16px;border-radius:9px;display:grid;place-items:center;padding:0 4px}
+  .bell-wrap{position:relative}
+  .bell-pop{position:absolute;top:50px;right:0;width:300px;background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:0 24px 60px -20px rgba(80,55,10,.35);padding:8px;z-index:40;opacity:0;visibility:hidden;transform:translateY(-8px);transition:.22s}
+  .bell-pop.open{opacity:1;visibility:visible;transform:translateY(0)}
+  .bp-h{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;font-weight:600;font-size:14px}
+  .bp-h span{color:var(--gold-2);font-size:12px;font-weight:500}
+  .bp-list{max-height:260px;overflow:auto}
+  .bp-i{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:12px;cursor:pointer;transition:.18s}
+  .bp-i:hover{background:var(--surface-2)}
+  .bp-i .dot{width:8px;height:8px;border-radius:50%;background:var(--bad);margin-top:6px;flex:none}
+  .bp-i.read .dot{background:var(--line-strong)}
+  .bp-i b{font-size:13px}
+  .bp-i p{margin:2px 0 0;font-size:12px;color:var(--txt-3)}
+  .bp-t{font-size:11px;color:var(--txt-3);margin-left:auto}
+  .bp-f{text-align:center;padding:10px;font-size:13px;color:var(--gold-2);cursor:pointer;border-top:1px solid var(--line);margin-top:4px}
+  .bp-f:hover{color:var(--gold)}
+
+  .view{animation:fade .4s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  .page-title{font-size:24px;font-weight:700;margin:4px 0 4px;letter-spacing:1px}
+  .page-sub{color:var(--txt-3);font-size:13px;margin-bottom:22px}
+
+  /* hero band（问候条） */
+  .hero-band{position:relative;overflow:hidden;border-radius:18px;padding:22px 26px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:16px;
+    background:linear-gradient(120deg,rgba(212,175,55,.16),rgba(255,253,248,.7));border:1px solid var(--line)}
+  .hero-band::after{content:"";position:absolute;right:-30px;top:-30px;width:180px;height:180px;border-radius:50%;
+    background:radial-gradient(circle,rgba(212,175,55,.25),transparent 70%);pointer-events:none}
+  .hero-band .hb-l{position:relative;z-index:1}
+  .hero-band .hb-l .hi{font-size:13px;color:var(--gold);letter-spacing:1px}
+  .hero-band .hb-l h2{font-size:22px;font-weight:700;margin-top:6px;letter-spacing:.5px}
+  .hero-band .hb-l p{font-size:12.5px;color:var(--txt-2);margin-top:6px}
+  .hero-band .hb-r{position:relative;z-index:1;display:flex;gap:10px}
+
+  /* bento */
+  .bento{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-bottom:18px}
+  .tile{position:relative;overflow:hidden;border-radius:var(--r);padding:20px;transition:.3s;
+    background:var(--glass);backdrop-filter:blur(16px) saturate(140%);-webkit-backdrop-filter:blur(16px) saturate(140%);border:1px solid var(--line)}
+  .tile::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:0;
+    background:radial-gradient(320px circle at var(--mx,50%) var(--my,30%),rgba(184,128,42,.12),transparent 60%);transition:background .15s ease-out}
+  .tile>*{position:relative;z-index:1}
+  .tile:hover{transform:translateY(-4px);border-color:var(--line-strong);box-shadow:var(--shadow)}
+  .tile .k{display:flex;align-items:center;gap:8px;color:var(--txt-3);font-size:12px;letter-spacing:1px}
+  .tile .k .ti{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:rgba(184,128,42,.12);color:var(--gold);font-size:15px}
+  .tile .v{font-size:30px;font-weight:700;margin-top:14px;letter-spacing:.5px}
+  .tile .v small{font-size:14px;color:var(--txt-2);font-weight:400;margin-left:4px}
+  .tile .delta{font-size:12px;margin-top:6px;display:inline-flex;align-items:center;gap:4px}
+  .up{color:var(--ok)}.down{color:var(--bad)}
+  .tile .spark{position:absolute;right:14px;bottom:12px;opacity:.85}
+
+  .grid-2{display:grid;grid-template-columns:1.6fr 1fr;gap:18px;margin-bottom:18px}
+  .panel{position:relative;overflow:hidden;border-radius:var(--r);padding:22px;
+    background:var(--glass);backdrop-filter:blur(16px) saturate(140%);-webkit-backdrop-filter:blur(16px) saturate(140%);border:1px solid var(--line)}
+  .panel::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:0;
+    background:radial-gradient(340px circle at var(--mx,50%) var(--my,30%),rgba(184,128,42,.10),transparent 60%);transition:background .15s ease-out}
+  .panel>*{position:relative;z-index:1}
+  .panel-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+  .panel-h h3{font-size:15px;letter-spacing:1px}
+  .seg{display:flex;gap:4px;background:var(--bg-2);border:1px solid var(--line);border-radius:10px;padding:3px}
+  .seg button{padding:6px 13px;border-radius:8px;font-size:12px;color:var(--txt-2);transition:.2s}
+  .seg button.on{background:var(--grad-gold);color:#2a2113;font-weight:600}
+  .legend{display:flex;gap:16px;font-size:12px;color:var(--txt-2)}
+  .legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px;vertical-align:middle}
+
+  .donut-wrap{display:flex;align-items:center;gap:22px}
+  .donut-c{position:relative;width:130px;height:130px}
+  .donut-c .ctr{position:absolute;inset:0;display:grid;place-items:center;text-align:center}
+  .donut-c .ctr b{font-size:22px}.donut-c .ctr span{font-size:11px;color:var(--txt-3)}
+  .donut-leg{display:flex;flex-direction:column;gap:10px;font-size:13px;flex:1}
+  .donut-leg .li{display:flex;align-items:center;justify-content:space-between}
+  .donut-leg .li i{width:9px;height:9px;border-radius:2px;margin-right:8px}
+
+  .feed{display:flex;flex-direction:column;gap:2px}
+  .feed .it{display:flex;gap:12px;padding:12px;border-radius:10px;transition:.2s;align-items:center}
+  .feed .it:hover{background:rgba(184,128,42,.07)}
+  .feed .av{width:34px;height:34px;border-radius:9px;background:var(--surface-2);display:grid;place-items:center;color:var(--gold-2);font-size:13px;flex-shrink:0}
+  .feed .it .t{font-size:13px}.feed .it .s{font-size:11.5px;color:var(--txt-3);margin-top:2px}
+
+  /* 精选房源（真实图片） */
+  .feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .feat-card{position:relative;border-radius:14px;overflow:hidden;border:1px solid var(--line);aspect-ratio:4/3;cursor:pointer;transition:.3s}
+  .feat-card:hover{transform:translateY(-4px);box-shadow:var(--shadow)}
+  .feat-card img{width:100%;height:100%;object-fit:cover;display:block;transition:.5s}
+  .feat-card:hover img{transform:scale(1.06)}
+  .feat-card .ov{position:absolute;inset:0;background:linear-gradient(180deg,transparent 42%,rgba(20,15,8,.82))}
+  .feat-card .txt{position:absolute;left:14px;right:14px;bottom:12px;color:#fff}
+  .feat-card .txt b{font-size:14px;font-weight:600;display:block}
+  .feat-card .txt span{font-size:11.5px;color:rgba(255,255,255,.78)}
+  .feat-card .price{position:absolute;top:10px;right:10px;background:rgba(20,15,8,.6);backdrop-filter:blur(4px);color:#e7cf8e;font-size:12px;font-weight:600;padding:4px 10px;border-radius:20px}
+
+  /* table */
+  .toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+  .chip{padding:8px 14px;border-radius:9px;background:var(--glass);border:1px solid var(--line);color:var(--txt-2);font-size:12.5px;transition:.2s}
+  .chip:hover{border-color:var(--line-strong);color:var(--txt)}
+  .chip.on{background:rgba(168,128,40,.14);border-color:var(--line-strong);color:var(--gold-2);font-weight:600}
+  .btn{border-radius:9px;padding:9px 15px;font-size:12.5px;transition:.2s;border:1px solid var(--line);color:var(--txt-2);background:var(--glass)}
+  .btn:hover{border-color:var(--line-strong);color:var(--txt)}
+  .btn.primary{background:var(--grad-gold);color:#2a2113;font-weight:600;border:none}
+  .btn.primary:hover{box-shadow:0 10px 24px -10px rgba(168,128,40,.7)}
+  .spacer{flex:1}
+  .table{background:var(--glass);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  thead th{text-align:left;padding:14px 16px;color:var(--txt-3);font-weight:500;font-size:12px;letter-spacing:1px;border-bottom:1px solid var(--line);background:var(--glass-2)}
+  tbody td{padding:14px 16px;border-bottom:1px solid rgba(0,0,0,.04);color:var(--txt-2)}
+  tbody tr{transition:.15s}
+  tbody tr:hover{background:rgba(184,128,42,.06)}
+  tbody tr:last-child td{border-bottom:none}
+  .u{display:flex;align-items:center;gap:10px}
+  .u .av{width:32px;height:32px;border-radius:9px;background:var(--grad-gold);display:grid;place-items:center;color:#2a2113;font-size:12px;font-weight:700;flex-shrink:0}
+  .u b{color:var(--txt);font-weight:600;font-size:13px}
+  .u span{font-size:11px;color:var(--txt-3)}
+  .tag{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:11.5px;font-weight:500}
+  .tag::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+  .t-ok{color:var(--ok);background:rgba(95,185,138,.14)}
+  .t-warn{color:var(--warn);background:rgba(224,164,88,.14)}
+  .t-bad{color:var(--bad);background:rgba(217,116,116,.14)}
+  .t-info{color:var(--info);background:rgba(111,168,214,.14)}
+  .t-mut{color:var(--txt-3);background:rgba(0,0,0,.05)}
+  .act{position:relative}
+  .kebab{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;color:var(--txt-3);transition:.2s}
+  .kebab:hover{background:var(--surface-2);color:var(--gold-2)}
+  .menu-pop{position:absolute;right:0;top:34px;background:var(--surface-2);border:1px solid var(--line-strong);border-radius:10px;padding:6px;min-width:120px;box-shadow:var(--shadow);display:none;z-index:30}
+  .menu-pop.open{display:block;animation:pop .15s ease}
+  @keyframes pop{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+  .menu-pop button{display:block;width:100%;text-align:left;padding:9px 11px;border-radius:7px;font-size:12.5px;color:var(--txt-2)}
+  .menu-pop button:hover{background:var(--surface);color:var(--gold-2)}
+
+  /* drawer */
+  .scrim{position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(3px);z-index:40;opacity:0;pointer-events:none;transition:.3s}
+  .scrim.open{opacity:1;pointer-events:auto}
+  .drawer{position:fixed;top:0;right:0;bottom:0;width:440px;max-width:92vw;z-index:41;transform:translateX(100%);transition:.35s cubic-bezier(.2,.8,.2,1);padding:28px;overflow-y:auto;
+    background:var(--glass-solid);backdrop-filter:blur(22px) saturate(140%);border-left:1px solid var(--line-strong)}
+  .drawer.open{transform:none}
+  .drawer h3{font-size:18px;margin-bottom:4px}
+  .drawer .close{position:absolute;top:24px;right:24px;font-size:20px;color:var(--txt-3)}
+  .kv{display:flex;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--line);font-size:13px}
+  .kv span{color:var(--txt-3)}
+  .kv b{color:var(--txt);font-weight:500}
+  .gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+  .gallery img{width:100%;aspect-ratio:1.4;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+
+  /* modal */
+  .modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-46%) scale(.96);z-index:42;width:420px;max-width:92vw;padding:28px;border-radius:18px;opacity:0;pointer-events:none;transition:.28s;
+    background:var(--glass-solid);backdrop-filter:blur(22px) saturate(140%);border:1px solid var(--line-strong);box-shadow:var(--shadow)}
+  .modal.open{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1)}
+  .modal h3{font-size:17px;margin-bottom:6px}
+  .modal p{color:var(--txt-2);font-size:13px;margin-bottom:18px;line-height:1.6}
+  .modal .mt{display:flex;gap:10px;margin-top:6px}
+  .modal textarea{width:100%;background:var(--bg-2);border:1px solid var(--line);border-radius:10px;color:var(--txt);padding:12px;font-size:13px;resize:none;outline:none;font-family:inherit}
+  .modal textarea:focus{border-color:var(--line-strong)}
+  .modal .form{display:flex;flex-direction:column;gap:14px;margin:6px 0 20px}
+  .modal .form label{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--txt-2)}
+  .modal .form label.row{flex-direction:row;align-items:center;justify-content:space-between}
+  .modal .form input,.modal .form select{background:var(--bg-2);border:1px solid var(--line);border-radius:10px;color:var(--txt);padding:10px 12px;font-size:13px;outline:none;font-family:inherit}
+  .modal .form input:focus,.modal .form select:focus{border-color:var(--line-strong)}
+  .modal .form input[type=checkbox]{width:18px;height:18px;accent-color:var(--gold-2)}
+
+  /* toast */
+  .toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(20px);z-index:60;background:rgba(36,31,24,.92);color:#fff;border:1px solid rgba(212,175,55,.4);border-radius:12px;padding:13px 22px;font-size:13px;box-shadow:0 20px 50px -20px rgba(0,0,0,.5);opacity:0;transition:.3s;display:flex;gap:10px;align-items:center}
+  .toast.show{opacity:1;transform:translateX(-50%)}
+  .toast .ic{color:#e7cf8e}
+
+  @media(max-width:1100px){.bento{grid-template-columns:repeat(2,1fr)}.grid-2{grid-template-columns:1fr}.feat-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- ============ LOGIN ============ -->
+<div id="login">
+  <div class="login-hero" id="hero">
+    <div class="hero-slides" id="heroSlides">
+      <div class="hero-slide active" style="background-image:url('assets/hero1.png')"></div>
+      <div class="hero-slide" style="background-image:url('assets/hero2.png')"></div>
+      <div class="hero-slide" style="background-image:url('assets/hero3.png')"></div>
+    </div>
+    <div class="hero-overlay"></div>
+    <div class="hero-cap">智居 ZHIGU · 智能租房平台</div>
+    <div class="hero-content">
+      <span class="hero-badge">✦ 运营后台 · OPERATION CONSOLE</span>
+      <h1>让租房<br/>更<em>智能</em>、更<em>安心</em></h1>
+      <p>统一管理房源、租户与交易，结合 AI 智能匹配与实时风控，为运营团队提供一站式决策中枢。</p>
+      <div class="hero-dots" id="heroDots"><i class="on" data-i="0"></i><i data-i="1"></i><i data-i="2"></i></div>
+    </div>
+  </div>
+  <div class="login-panel">
+    <div class="login-card" id="loginCard">
+      <div class="brand"><div class="mark">智</div><div><h2>智居运营后台</h2><small>RENT OPERATION CONSOLE</small></div></div>
+      <div class="welcome">欢迎回来</div>
+      <div class="sub">请输入管理员账号以继续</div>
+      <div class="field">
+        <label>管理员账号</label>
+        <div class="input-box"><span class="ic">◈</span><input id="lg-user" placeholder="如 admin" value="admin" autocomplete="off"/></div>
+      </div>
+      <div class="field">
+        <label>登录密码</label>
+        <div class="input-box"><span class="ic">⚷</span><input id="lg-pwd" type="password" placeholder="请输入密码" value="123456"/><button type="button" class="pw-toggle" id="pwToggle" onclick="togglePw()" aria-label="显示/隐藏密码" title="显示密码"></button></div>
+      </div>
+      <div class="row">
+        <label><input type="checkbox" checked style="accent-color:var(--gold)"/> 记住我</label>
+        <a href="#" onclick="return false">忘记密码？</a>
+      </div>
+      <button class="btn-gold" id="loginBtn" onclick="doLogin()"><span class="shimmer"></span><span id="loginTxt">登 录 →</span></button>
+      <div class="login-foot">受 Sa-Token 保护 · 登录即代表同意服务条款</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ APP ============ -->
+<div id="app">
+  <div class="app-glow"></div>
+  <aside class="rail">
+    <div class="logo">智</div>
+    <button class="nav-i on" data-nav="运营" title="运营"></button>
+    <button class="nav-i" data-nav="房源" title="房源"></button>
+    <button class="nav-i" data-nav="用户" title="用户"></button>
+    <button class="nav-i" data-nav="交易" title="交易"></button>
+    <button class="nav-i" data-nav="消息" title="消息"></button>
+    <div class="me" title="管理员">A</div>
+  </aside>
+
+  <aside class="side">
+    <h2 id="side-title">运 营 中 心</h2>
+    <nav class="menu" id="menu"></nav>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div><div class="crumb">运营中心 / <b id="crumb">数据看板</b></div></div>
+      <div class="right">
+        <div class="search"><span class="s-ic"></span><input placeholder="搜索房源 / 用户 / 订单…"/></div>
+        <div class="bell-wrap">
+          <button class="icon-btn" id="icBell" title="通知" onclick="toggleBell()"><span class="badge" id="bellBadge">5</span></button>
+          <div class="bell-pop" id="bellPop">
+            <div class="bp-h">通知 <span id="bellCount">5 条未读</span></div>
+            <div class="bp-list">
+              <div class="bp-i" onclick="readBell(this)"><span class="dot"></span><div><b>新预约</b><p>张明预约 阳光花园 3室1厅</p></div><span class="bp-t">10m</span></div>
+              <div class="bp-i" onclick="readBell(this)"><span class="dot"></span><div><b>待审核</b><p>陈先生提交 翠湖天地 4室2厅</p></div><span class="bp-t">1h</span></div>
+              <div class="bp-i" onclick="readBell(this)"><span class="dot"></span><div><b>系统</b><p>新版本 v1.2 已发布</p></div><span class="bp-t">1d</span></div>
+            </div>
+            <div class="bp-f" onclick="toast('已读全部通知')">全部标为已读</div>
+          </div>
+        </div>
+        <button class="icon-btn" id="icSet" title="设置" onclick="openModal('settings')"></button>
+        <button class="icon-btn" id="icTheme" title="切换日 / 夜模式" onclick="toggleTheme()"></button>
+      </div>
+    </header>
+    <div id="content"></div>
+  </main>
+</div>
+
+<div class="scrim" id="scrim" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer"></div>
+<div class="modal" id="modal"></div>
+<div class="toast" id="toast"><span class="ic">✓</span><span id="toast-t"></span></div>
+
+<script>
+/* ---------------- 图标 ---------------- */
+var ICON={
+  dashboard:'<path d="M3 13h8V3H3zM13 21h8V11h-8zM13 3v6h8V3zM3 21h8v-6H3z"/>',
+  house:'<path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/>',
+  user:'<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>',
+  deal:'<path d="M3 7h18v12H3z"/><path d="M3 11h18"/><path d="M7 15h4"/>',
+  msg:'<path d="M4 5h16v11H8l-4 4z"/>',
+  grid:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
+  check:'<path d="M20 6L9 17l-5-5"/>',
+  users:'<circle cx="9" cy="8" r="3.2"/><path d="M2.5 20c0-3.3 2.9-5 6.5-5s6.5 1.7 6.5 5"/><path d="M16 5.2A3.2 3.2 0 0 1 16 11M21.5 20c0-2.6-1.8-4.2-4.5-4.7"/>',
+  calendar:'<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/>',
+  doc:'<path d="M6 2h8l4 4v16H6z"/><path d="M14 2v4h4M9 13h6M9 17h6"/>',
+  chat:'<path d="M21 12a8 8 0 0 1-11.5 7.2L3 21l1.8-6.5A8 8 0 1 1 21 12z"/>',
+  home2:'<path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  search:'<circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/>',
+  bell:'<path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/>',
+  settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2V21a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 6.6 19a1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 3 13.4H3a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 4.6 6.6l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 10 3.6V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9z"/>'
+};
+function svg(p,s){s=s||18;return '<svg width="'+s+'" height="'+s+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'+(ICON[p]||'')+'</svg>';}
+var RAIL_ICON={运营:'dashboard',房源:'house',用户:'user',交易:'deal',消息:'msg'};
+var MENU_ICON={dashboard:'grid',house:'home2',audit:'check',user:'users',order:'calendar',contract:'doc',message:'chat'};
+/* 渲染 rail / 顶栏 SVG 图标 */
+document.querySelectorAll('.nav-i').forEach(function(b){b.innerHTML=svg(RAIL_ICON[b.dataset.nav],20);});
+document.querySelector('.s-ic').innerHTML=svg('search',16);
+document.getElementById('icBell').insertAdjacentHTML('afterbegin',svg('bell',18));
+document.getElementById('icSet').innerHTML=svg('settings',18);
+
+/* 日 / 夜 主题切换 */
+var SUN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
+var MOON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg>';
+var themeBtn=document.getElementById('icTheme');
+function applyTheme(t){document.documentElement.dataset.theme=t;if(themeBtn)themeBtn.innerHTML=(t==='dark'?SUN:MOON);try{localStorage.setItem('admin-theme',t);}catch(e){}}
+function toggleTheme(){applyTheme(document.documentElement.dataset.theme==='dark'?'':'dark');}
+(function(){var t='light';try{t=localStorage.getItem('admin-theme')||'light';}catch(e){}applyTheme(t);})();
+
+/* ---------------- 登录页：大图轮播 + 鼠标视差 ---------------- */
+var heroSlides=document.querySelectorAll('#heroSlides .hero-slide');
+var heroDots=document.querySelectorAll('#heroDots i');
+var heroIdx=0;
+function showHero(i){heroSlides[heroIdx].classList.remove('active');heroDots[heroIdx].classList.remove('on');heroIdx=(i+heroSlides.length)%heroSlides.length;heroSlides[heroIdx].classList.add('active');heroDots[heroIdx].classList.add('on');}
+var heroTimer=setInterval(function(){showHero(heroIdx+1);},5000);
+heroDots.forEach(function(d){d.addEventListener('click',function(){clearInterval(heroTimer);showHero(+d.dataset.i);});});
+var heroEl=document.getElementById('hero'),heroWrap=document.getElementById('heroSlides');
+heroEl.addEventListener('mousemove',function(e){var r=heroEl.getBoundingClientRect();var x=(e.clientX-r.left)/r.width-0.5,y=(e.clientY-r.top)/r.height-0.5;heroWrap.style.transform='scale(1.08) translate('+(x*-22)+'px,'+(y*-22)+'px)';});
+heroEl.addEventListener('mouseleave',function(){heroWrap.style.transform='scale(1.08) translate(0,0)';});
+var card=document.getElementById('loginCard');
+card.addEventListener('mousemove',function(e){var r=card.getBoundingClientRect();card.style.setProperty('--mx',(e.clientX-r.left)+'px');card.style.setProperty('--my',(e.clientY-r.top)+'px');});
+
+/* 密码框显示/隐藏切换 */
+var EYE_ON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>';
+var EYE_OFF='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+var pwBtn=document.getElementById('pwToggle');pwBtn.innerHTML=EYE_ON;
+function togglePw(){var i=document.getElementById('lg-pwd');var show=i.type==='password';i.type=show?'text':'password';pwBtn.innerHTML=show?EYE_OFF:EYE_ON;pwBtn.classList.toggle('on',show);pwBtn.title=show?'隐藏密码':'显示密码';}
+
+/* ---------------- login ---------------- */
+function doLogin(){
+  var u=document.getElementById('lg-user').value,p=document.getElementById('lg-pwd').value;
+  if(!u||!p){toast('请输入账号和密码','✕');return;}
+  var btn=document.getElementById('loginBtn'),txt=document.getElementById('loginTxt');
+  btn.disabled=true;txt.textContent='登 录 中…';
+  setTimeout(function(){document.getElementById('login').style.display='none';document.getElementById('app').style.display='block';renderSide('运营');},900);
+}
+
+/* ---------------- data ---------------- */
+var MENUS={
+  运营:[{t:'数据看板',k:'dashboard'}],
+  房源:[{t:'房源列表',k:'house'},{t:'房源审核',k:'audit'}],
+  用户:[{t:'用户列表',k:'user'}],
+  交易:[{t:'预约管理',k:'order'},{t:'合同管理',k:'contract'}],
+  消息:[{t:'消息列表',k:'message'}]
+};
+var curPage='dashboard';
+
+function renderSide(nav){
+  document.querySelectorAll('.nav-i').forEach(function(b){b.classList.toggle('on',b.dataset.nav===nav)});
+  document.getElementById('side-title').textContent=nav+' 中 心';
+  var m=MENUS[nav];
+  document.getElementById('menu').innerHTML=m.map(function(it,i){
+    return '<button class="'+(i===0?'on':'')+'" onclick="goPage(\''+it.k+'\',this)">'+svg(MENU_ICON[it.k],17)+'<span>'+it.t+'</span></button>';
+  }).join('');
+  goPage(m[0].k,document.querySelector('#menu button'));
+}
+document.querySelectorAll('.nav-i').forEach(function(b){b.onclick=function(){renderSide(b.dataset.nav);};});
+
+function goPage(k,el){
+  if(el){document.querySelectorAll('#menu button').forEach(function(x){x.classList.remove('on')});el.classList.add('on');}
+  curPage=k;
+  var meta={dashboard:['数据看板'],house:['房源列表'],audit:['房源审核'],user:['用户列表'],order:['预约管理'],contract:['合同管理'],message:['消息列表']};
+  document.getElementById('crumb').textContent=meta[k][0];
+  var c=document.getElementById('content');
+  c.innerHTML={dashboard:viewDashboard,house:viewHouse,audit:viewAudit,user:viewUser,order:viewOrder,contract:viewContract,message:viewMessage}[k]();
+  c.firstChild&&(c.firstChild.className='view');
+  bindTable();
+  if(k==='dashboard')drawCharts();
+}
+
+/* ---------------- views ---------------- */
+function tag(cls,txt){return '<span class="tag '+cls+'">'+txt+'</span>';}
+function chipBtns(arr){return arr.map(function(t,i){return '<button class="chip'+(i===0?' on':'')+'" data-f="'+(i===0?'all':t)+'">'+t+'</button>';}).join('');}
+function btn(label,onclick,primary){return '<button class="btn'+(primary?' primary':'')+'" onclick="'+onclick+'">'+label+'</button>';}
+function featCard(img,title,price,sub){
+  return '<div class="feat-card" onclick="openDrawer(\'house\')"><img src="'+img+'" alt="'+title+'"/><span class="price">'+price+'</span><div class="ov"></div><div class="txt"><b>'+title+'</b><span>'+sub+'</span></div></div>';
+}
+function kpi(ic,k,v,d,up,col){
+  return '<div class="tile"><div class="k"><span class="ti">'+svg(ic,15)+'</span>'+k+'</div><div class="v mono" data-count="'+v+'">0</div>'+
+    '<div class="delta '+(up?'up':'down')+'">'+(up?'▲':'▼')+' '+d+'</div>'+
+    '<svg class="spark" width="64" height="26"><polyline points="0,20 13,14 26,17 39,8 52,12 64,4" fill="none" stroke="'+col+'" stroke-width="1.8" opacity=".75"/></svg></div>';
+}
+
+function viewDashboard(){
+  return `
+  <div class="hero-band">
+    <div class="hb-l"><div class="hi">✦ 早上好，管理员</div><h2 class="serif">运营总览 · 平台今日脉搏</h2><p>数据每 5 分钟刷新 · 最近同步 07-23 15:40</p></div>
+    <div class="hb-r"><button class="btn" onclick="toast('已导出日报')">⬇ 导出日报</button><button class="btn primary" onclick="openDrawer('house')">${svg('plus',16)} 新增房源</button></div>
+  </div>
+  <div class="bento">
+    ${kpi('users','用户总数','12,840','+8.2%',1,'#b8902a')}
+    ${kpi('home2','房源总数','3,265','+3.1%',0,'#c9a227')}
+    ${kpi('deal','本月新增订单','486','-2.4%',0,'#c2883a')}
+    ${kpi('check','待处理审核','17','需关注',2,'#c75d5d')}
+  </div>
+  <div class="grid-2">
+    <div class="panel">
+      <div class="panel-h"><h3>用户 & 房源增长趋势</h3>
+        <div class="seg"><button class="on" data-r="7d" onclick="setRange('7d',this)">7天</button><button data-r="30d" onclick="setRange('30d',this)">30天</button><button data-r="q" onclick="setRange('q',this)">季度</button></div></div>
+      <svg id="area" viewBox="0 0 620 220" style="width:100%;height:220px"></svg>
+    </div>
+    <div class="panel">
+      <div class="panel-h"><h3>房源类型分布</h3></div>
+      <div class="donut-wrap">
+        <div class="donut-c"><svg id="donut" viewBox="0 0 120 120" style="width:130px;height:130px"></svg>
+          <div class="ctr"><b>3,265</b><span>套在架</span></div></div>
+        <div class="donut-leg">
+          ${leg('#a8842f','整租','1420')}${leg('#c2a05a','合租','980')}${leg('#b08a3a','公寓','560')}${leg('#8a7a45','民宿','305')}
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="panel" style="margin-bottom:18px">
+    <div class="panel-h"><h3>精选房源 · 实景</h3><span class="chip" onclick="goPage('house',document.querySelector('#menu button'))">查看全部 →</span></div>
+    <div class="feat-grid">
+      ${featCard('assets/g1.png','翠湖天地 · 主卧','¥4,200/月','整租 · 89㎡')}
+      ${featCard('assets/g2.png','江景公寓 · 餐厨','¥2,800/月','合租 · 45㎡')}
+      ${featCard('assets/g3.png','云栖 LOFT · 卫浴','¥3,600/月','公寓 · 60㎡')}
+    </div>
+  </div>
+  <div class="grid-2">
+    <div class="panel">
+      <div class="panel-h"><h3>最新看房预约</h3><span class="chip" onclick="goPage('order',document.querySelector('#menu button'))">查看全部 →</span></div>
+      <div class="feed">
+        ${feed('张','张明预约 阳光花园 3室1厅','10分钟前','待确认')}
+        ${feed('李','李婷预约 江景公寓 1室1厅','32分钟前','已确认')}
+        ${feed('王','王浩预约 中央公馆 2室1厅','1小时前','已完成')}
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-h"><h3>待审核房源</h3><span class="chip" onclick="goPage('audit',document.querySelector('#menu button'))">去审核 →</span></div>
+      <div class="feed">
+        ${feed('☉','房东「陈先生」提交 翠湖天地','待审核')}
+        ${feed('☉','房东「刘女士」提交 滨江壹号','待审核')}
+        ${feed('☉','房东「赵先生」提交 云栖小镇','待审核')}
+      </div>
+    </div>
+  </div>`;
+}
+function leg(c,t,n){return '<div class="li"><span><i style="background:'+c+'"></i>'+t+'</span><b class="mono">'+n+'</b></div>';}
+function feed(av,t,s,st){
+  var c=st==='待确认'||st==='待审核'?'t-warn':st==='已确认'?'t-info':st==='已完成'?'t-ok':'t-mut';
+  return '<div class="it"><div class="av">'+av+'</div><div style="flex:1"><div class="t">'+t+'</div><div class="s">'+s+'</div></div>'+(st?tag(c,st):'')+'</div>';
+}
+
+function viewHouse(){
+  return '<div class="page-title serif grad-txt">房源列表</div><div class="page-sub">管理全部在架与下架房源</div>'+
+  '<div class="toolbar">'+chipBtns(['全部','在架','待审核','已下架'])+
+  '<div class="spacer"></div>'+btn('⬇ 导出','toast(\'已导出房源列表\')')+btn(svg('plus',16)+' 新增房源',"openDrawer('house')",1)+'</div>'+
+  table(['房源','小区/标题','户型','月租(¥)','状态','操作'],[
+    ['阳光花园 3室1厅','阳光花园','3室1厅',4200,'ok','在架'],
+    ['江景公寓 1室1厅','江景公寓','1室1厅',2800,'ok','在架'],
+    ['中央公馆 2室1厅','中央公馆','2室1厅',5500,'warn','待审核'],
+    ['翠湖天地 4室2厅','翠湖天地','4室2厅',8900,'mut','已下架'],
+    ['云栖小镇 LOFT','云栖小镇','LOFT',3600,'ok','在架']
+  ],'house');
+}
+function viewAudit(){
+  return '<div class="page-title serif grad-txt">房源审核</div><div class="page-sub">房东提交的房源需人工核验资质与图片</div>'+
+  '<div class="toolbar">'+chipBtns(['待审核','已通过','已驳回'])+
+  '<div class="spacer"></div>'+btn('批量通过',"toast('已批量通过 2 条审核')")+'</div>'+
+  table(['房源','房东','提交时间','租金','状态','操作'],[
+    ['翠湖天地 4室2厅','陈先生','07-16 14:20',8900,'warn','待审核'],
+    ['滨江壹号 2室1厅','刘女士','07-16 11:05',5200,'warn','待审核'],
+    ['云栖小镇 1室0厅','赵先生','07-15 19:42',2300,'ok','已通过'],
+    ['西溪蝶园 3室1厅','孙女士','07-15 09:18',6100,'bad','已驳回']
+  ],'audit');
+}
+function viewUser(){
+  return '<div class="page-title serif grad-txt">用户列表</div><div class="page-sub">租客、房东与运营账号统一管理</div>'+
+  '<div class="toolbar">'+chipBtns(['全部','租客','房东','封禁'])+
+  '<div class="spacer"></div>'+btn('+ 新建账号',"openModal('user-new')")+'</div>'+
+  table(['用户','角色','手机','注册时间','状态','操作'],[
+    ['张明','租客','138****2048','2026-03-12','ok','正常'],
+    ['陈先生','房东','139****7711','2026-01-08','ok','正常'],
+    ['李婷','租客','137****3390','2026-02-21','ok','正常'],
+    ['王浩','租客','136****8820','2025-12-30','bad','已封禁']
+  ],'user');
+}
+function viewOrder(){
+  return '<div class="page-title serif grad-txt">预约管理</div><div class="page-sub">看房预约与带看进度跟踪</div>'+
+  '<div class="toolbar">'+chipBtns(['全部','待确认','已确认','已完成','已取消'])+'</div>'+
+  table(['预约人','房源','预约时间','状态','操作'],[
+    ['张明','阳光花园 3室1厅','07-16 15:00','warn','待确认'],
+    ['李婷','江景公寓 1室1厅','07-16 10:30','info','已确认'],
+    ['王浩','中央公馆 2室1厅','07-15 14:00','ok','已完成'],
+    ['赵磊','云栖小镇 LOFT','07-14 11:00','mut','已取消']
+  ],'order');
+}
+function viewContract(){
+  return '<div class="page-title serif grad-txt">合同管理</div><div class="page-sub">电子合同签署与归档</div>'+
+  '<div class="toolbar">'+chipBtns(['全部','待签署','已签署','已到期'])+
+  '<div class="spacer"></div>'+btn('⬇ 导出',"toast('已导出合同台账')")+'</div>'+
+  table(['合同编号','房源','租客 / 房东','金额','状态','操作'],[
+    ['HT2026070001','阳光花园 3室1厅','张明 / 陈先生',4200,'info','待签署'],
+    ['HT2026060088','江景公寓 1室1厅','李婷 / 刘女士',2800,'ok','已签署'],
+    ['HT2026050076','中央公馆 2室1厅','王浩 / 孙女士',5500,'ok','已签署']
+  ],'contract');
+}
+function viewMessage(){
+  return '<div class="page-title serif grad-txt">消息中心</div><div class="page-sub">系统通知、用户反馈与 AI 对话记录</div>'+
+  '<div class="toolbar">'+chipBtns(['全部','系统','反馈','AI对话'])+'</div>'+
+  table(['类型','标题','接收人','时间','状态','操作'],[
+    ['系统','新版本 v1.2 已发布','全员','07-16 09:00','t-ok','已读'],
+    ['反馈','房源图片不清晰','张明','07-15 21:14','t-warn','待处理'],
+    ['AI对话','咨询租房预算','李婷','07-15 18:30','t-info','已回复']
+  ],'message');
+}
+
+function table(head,rows,type){
+  var h=head.map(function(x){return '<th>'+x+'</th>'}).join('');
+  var b=rows.map(function(r){
+    var last=r[r.length-1];
+    var statusWord=last;
+    var stMap={ok:'在架',warn:'待审核',bad:'已驳回',mut:'已下架',info:'待确认'};
+    var statusCell='';var cls='t-mut';
+    if(type==='house'||type==='audit'){var s=stMap[last]||last;cls={ok:'t-ok',warn:'t-warn',bad:'t-bad',mut:'t-mut',info:'t-info'}[last]||'t-mut';statusWord=s;statusCell=tag(cls,s);}
+    else if(type==='order'){var o={warn:['t-warn','待确认'],info:['t-info','已确认'],ok:['t-ok','已完成'],mut:['t-mut','已取消']};var s2=o[last]||['t-mut',last];cls=s2[0];statusWord=s2[1];statusCell=tag(s2[0],s2[1]);}
+    else if(type==='user'){statusWord=last==='ok'?'正常':'已封禁';cls=last==='ok'?'t-ok':'t-bad';statusCell=tag(cls,statusWord);}
+    else if(type==='contract'){var c={info:['t-info','待签署'],ok:['t-ok','已签署'],mut:['t-mut','已到期']};var s3=c[last]||['t-mut',last];cls=s3[0];statusWord=s3[1];statusCell=tag(s3[0],s3[1]);}
+    else if(type==='message'){statusWord=last;cls={ok:'t-ok',warn:'t-warn',info:'t-info',mut:'t-mut'}[last]||'t-mut';statusCell=tag(cls,last);}
+    var tags=[statusWord];
+    if(type==='user'){tags.push(r[1]);if(statusWord==='已封禁')tags.push('封禁');}
+    if(type==='message'){tags.push(r[0]);}
+    var nameCell='<div class="u"><div class="av">'+r[0].slice(0,1)+'</div><div><b>'+r[0]+'</b>'+(r[1]?'<span>'+r[1]+'</span>':'')+'</div></div>';
+    return '<tr data-fw="'+tags.join('|')+'"><td>'+nameCell+'</td>'+r.slice(2,r.length-1).map(function(c,i){return '<td'+(['月租','租金','金额'].includes(head[i+2])?' class="mono"':'')+'>'+c+'</td>'}).join('')+'<td>'+statusCell+'</td><td><div class="act"><button class="kebab" onclick="toggleKebab(this)">⋮</button><div class="menu-pop">'+actions(type)+'</div></div></td></tr>';
+  }).join('');
+  return '<div class="table"><table><thead><tr>'+h+'</tr></thead><tbody>'+b+'</tbody></table></div>';
+}
+function actions(type){
+  if(type==='audit')return '<button onclick="openModal(\'audit-pass\')">✓ 通过</button><button onclick="openModal(\'audit-reject\')">✕ 驳回</button><button onclick="toast(\'查看房源详情\')">查看详情</button>';
+  if(type==='house')return '<button onclick="toast(\'进入编辑模式\')">编辑</button><button onclick="toast(\'已下架该房源\')">下架</button><button onclick="openDrawer(\'house\')">查看</button>';
+  if(type==='order')return '<button onclick="toast(\'已确认预约\')">确认预约</button><button onclick="toast(\'已标记带看完成\')">完成带看</button><button onclick="openDrawer(\'house\')">查看</button>';
+  if(type==='contract')return '<button onclick="toast(\'查看电子合同\')">查看合同</button><button onclick="toast(\'已生成 PDF 下载\')">下载PDF</button>';
+  if(type==='user')return '<button onclick="toast(\'进入编辑\')">编辑</button><button onclick="toast(\'已封禁该账号\')">封禁</button><button onclick="toast(\'已发送密码重置链接\')">重置密码</button>';
+  return '<button onclick="toast(\'查看消息详情\')">查看</button><button onclick="toast(\'已标为已读\')">标记已读</button>';
+}
+
+/* ---------------- interactions ---------------- */
+function bindTable(){
+  document.querySelectorAll('#content .toolbar').forEach(function(tb){
+    var chips=tb.querySelectorAll('.chip');
+    chips.forEach(function(c){
+      c.onclick=function(){
+        chips.forEach(function(x){x.classList.remove('on')});c.classList.add('on');
+        var f=c.dataset.f||'all';
+        document.querySelectorAll('#content tbody tr').forEach(function(rw){
+          rw.style.display=(f==='all'||(rw.dataset.fw||'').split('|').indexOf(f)>=0)?'':'none';
+        });
+      };
+    });
+  });
+}
+function toggleKebab(el){var p=el.nextElementSibling;document.querySelectorAll('.menu-pop').forEach(function(x){if(x!==p)x.classList.remove('open')});p.classList.toggle('open');}
+document.addEventListener('click',function(e){
+  if(!e.target.closest('.act'))document.querySelectorAll('.menu-pop').forEach(function(x){x.classList.remove('open')});
+  if(!e.target.closest('.bell-wrap'))document.getElementById('bellPop').classList.remove('open');
+});
+function toggleBell(){var p=document.getElementById('bellPop');p.classList.toggle('open');}
+function readBell(el){el.classList.add('read');var n=document.querySelectorAll('#bellPop .bp-i:not(.read)').length;var bad=document.getElementById('bellBadge'),cnt=document.getElementById('bellCount');if(n===0){bad.style.display='none';cnt.textContent='全部已读';}else{bad.textContent=n;cnt.textContent=n+' 条未读';}}
+/* Card Spotlight：tiles & panels 鼠标聚光 */
+function bindSpotlight(){
+  document.querySelectorAll('.tile,.panel').forEach(function(el){
+    el.addEventListener('mousemove',function(e){var r=el.getBoundingClientRect();el.style.setProperty('--mx',(e.clientX-r.left)+'px');el.style.setProperty('--my',(e.clientY-r.top)+'px');});
+  });
+}
+
+function openDrawer(type){
+  var d=document.getElementById('drawer'),s=document.getElementById('scrim');
+  d.innerHTML='<button class="close" onclick="closeDrawer()">✕</button><h3 class="serif">房源详情</h3><p style="color:var(--txt-3);font-size:13px;margin-bottom:18px">NO. H2026070016 · 阳光花园 3室1厅</p>'+
+    '<div class="kv"><span>小区</span><b>阳光花园</b></div><div class="kv"><span>户型</span><b>3室1厅 · 89㎡</b></div>'+
+    '<div class="kv"><span>月租</span><b class="gold mono">¥4,200</b></div><div class="kv"><span>房东</span><b>陈先生</b></div>'+
+    '<div class="kv"><span>状态</span><b>在架</b></div><div class="kv"><span>提交时间</span><b>2026-07-10</b></div>'+
+    '<div class="gallery"><img src="assets/g1.png" alt="客厅"/><img src="assets/g2.png" alt="餐厨"/><img src="assets/g3.png" alt="卫浴"/></div>'+
+    '<div style="display:flex;gap:10px;margin-top:22px"><button class="btn primary" style="flex:1" onclick="toast(\'已下架\')">下架房源</button><button class="btn" style="flex:1" onclick="closeDrawer()">关闭</button></div>';
+  d.classList.add('open');s.classList.add('open');
+}
+function closeDrawer(){document.getElementById('drawer').classList.remove('open');document.getElementById('scrim').classList.remove('open');}
+
+function openModal(kind){
+  var m=document.getElementById('modal'),s=document.getElementById('scrim');
+  if(kind==='audit-pass'){m.innerHTML='<h3>通过审核</h3><p>确认通过该房源上架？上架后将对租客可见。</p><div class="mt"><button class="btn primary" style="flex:1" onclick="closeModal();toast(\'已通过并上架\')">确认通过</button><button class="btn" style="flex:1" onclick="closeModal()">取消</button></div>';}
+  else if(kind==='audit-reject'){m.innerHTML='<h3>驳回房源</h3><p>请填写驳回原因，将通知房东修改后重新提交。</p><textarea rows="3" placeholder="如：图片不清晰 / 资质不全…"></textarea><div class="mt"><button class="btn primary" style="flex:1" onclick="closeModal();toast(\'已驳回\')">确认驳回</button><button class="btn" style="flex:1" onclick="closeModal()">取消</button></div>';}
+  else if(kind==='settings'){m.innerHTML='<h3>系统设置</h3><div class="form"><label>平台名称<input value="智慧租房 · 运营后台"/></label><label>自动审核<select><option>关闭</option><option>仅图片</option><option>全开</option></select></label><label class="row">新消息桌面提醒<input type="checkbox" checked/></label></div><div class="mt"><button class="btn primary" style="flex:1" onclick="closeModal();toast(\'设置已保存\')">保存</button><button class="btn" style="flex:1" onclick="closeModal()">取消</button></div>';}
+  else if(kind==='user-new'){m.innerHTML='<h3>新建账号</h3><div class="form"><label>姓名<input placeholder="请输入姓名"/></label><label>手机<input placeholder="13800000000"/></label><label>角色<select><option>租客</option><option>房东</option><option>运营</option></select></label></div><div class="mt"><button class="btn primary" style="flex:1" onclick="closeModal();toast(\'账号已创建\')">创建</button><button class="btn" style="flex:1" onclick="closeModal()">取消</button></div>';}
+  else{m.innerHTML='<h3>驳回房源</h3><p>请填写驳回原因，将通知房东修改后重新提交。</p><textarea rows="3" placeholder="如：图片不清晰 / 资质不全…"></textarea><div class="mt"><button class="btn primary" style="flex:1" onclick="closeModal();toast(\'已驳回\')">确认驳回</button><button class="btn" style="flex:1" onclick="closeModal()">取消</button></div>';}
+  m.classList.add('open');s.classList.add('open');
+}
+function closeModal(){document.getElementById('modal').classList.remove('open');document.getElementById('scrim').classList.remove('open');}
+document.getElementById('scrim').addEventListener('click',closeModal);
+
+var toastT;function toast(msg,ic){var t=document.getElementById('toast');document.getElementById('toast-t').textContent=msg;t.querySelector('.ic').textContent=ic||'✓';t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(function(){t.classList.remove('show');},2200);}
+
+/* ---------------- charts ---------------- */
+var AREA_PTS={
+  '7d':[[0,150],[90,120],[180,135],[270,80],[360,95],[450,45],[540,60],[620,25]],
+  '30d':[[0,170],[83,140],[166,150],[250,95],[333,110],[416,60],[500,75],[620,30]],
+  'q':[[0,185],[88,165],[176,120],[264,140],[352,90],[440,100],[528,55],[620,40]]
+};
+function drawCharts(){
+  document.querySelectorAll('[data-count]').forEach(function(el){var t=el.dataset.count.replace(/,/g,'');if(isNaN(t))return;var n=0,step=Math.ceil(t/40);var iv=setInterval(function(){n+=step;if(n>=t){n=t;clearInterval(iv);}el.textContent=n.toLocaleString();},22);});
+  bindSpotlight();
+  drawArea(AREA_PTS['7d']);
+  drawDonut();
+}
+function drawArea(pts){
+  var svg=document.getElementById('area');if(!svg)return;
+  var H=220;
+  var line=pts.map(function(p){return p[0]+','+p[1]}).join(' ');
+  var area=line+' 620,220 0,220';
+  var grid='';for(var gy=40;gy<H;gy+=45){grid+='<line x1="0" y1="'+gy+'" x2="620" y2="'+gy+'" stroke="rgba(168,128,40,.12)" stroke-width="1"/>';}
+  svg.innerHTML='<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b08a3a" stop-opacity=".3"/><stop offset="1" stop-color="#b08a3a" stop-opacity="0"/></linearGradient></defs>'+
+    grid+
+    '<path d="M'+area+'" fill="url(#g)"/>'+
+    '<polyline points="'+line+'" fill="none" stroke="#a8842f" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="stroke-dasharray:1600;stroke-dashoffset:1600;animation:draw 1.6s ease forwards"/>'+
+    pts.map(function(p){return '<circle cx="'+p[0]+'" cy="'+p[1]+'" r="3.4" fill="#fff" stroke="#a8842f" stroke-width="2"/>'}).join('');
+  if(!document.getElementById('dk')){var st=document.createElement('style');st.id='dk';st.textContent='@keyframes draw{to{stroke-dashoffset:0}}';document.head.appendChild(st);}
+}
+function drawDonut(){
+  var dn=document.getElementById('donut');if(!dn)return;
+  var segs=[['#a8842f',1420],['#c2a05a',980],['#b08a3a',560],['#8a7a45',305]];var tot=3265,r=46,C=2*Math.PI*r;var off=0;
+  var p='';segs.forEach(function(s){var len=C*s[1]/tot;p+='<circle cx="60" cy="60" r="'+r+'" fill="none" stroke="'+s[0]+'" stroke-width="13" stroke-dasharray="'+len+' '+(C-len)+'" stroke-dashoffset="'+(-off)+'" transform="rotate(-90 60 60)" style="transition:stroke-dasharray 1s"/>';off+=len;});
+  dn.innerHTML=p;
+}
+function setRange(r,btn){document.querySelectorAll('.seg button').forEach(function(b){b.classList.remove('on')});btn.classList.add('on');drawArea(AREA_PTS[r]||AREA_PTS['7d']);}
+</script>
+</body>
+</html>

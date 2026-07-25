@@ -1,0 +1,32 @@
+# Build output
+target/
+dist/
+build/
+*.class
+*.jar
+*.war
+
+# Node
+node_modules/
+.pnp/
+.pnp.js
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.iws
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+
+# Project private memory (contains local notes, do not publish)
+.workbuddy/
+
+# Local sensitive configs / scripts (contain OSS keys etc.)
+run-local.bat
+application-local.yml
+*.secret.yml
+*.local.yml

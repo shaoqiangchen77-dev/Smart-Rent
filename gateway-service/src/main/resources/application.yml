@@ -1,0 +1,50 @@
+server:
+  port: 8080
+  error:
+    include-message: always
+    include-exception: true
+    include-stacktrace: always
+
+spring:
+  application:
+    name: gateway-service
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848
+        enabled: false
+      config:
+        enabled: false
+        import-check:
+          enabled: false
+    gateway:
+      routes:
+        - id: system-service
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/user/**,/api/message/**,/api/admin/**,/api/collection/**,/api/preference/**,/api/browse-history/**
+          filters:
+            - StripPrefix=1
+        - id: house-service
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/house/**,/api/appointment/**,/api/contract/**,/api/bill/**,/api/file/**,/api/recommend/**,/api/review/**
+          filters:
+            - StripPrefix=1
+        - id: agent-service
+          uri: http://localhost:8085
+          predicates:
+            - Path=/api/agent/**
+          filters:
+            - StripPrefix=1
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+
+sa-token:
+  token-name: Authorization
+  timeout: 86400
+  is-concurrent: true
+  is-share: true
+  token-style: uuid

@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>智居 · 租户端</title>
+<style>
+  :root{
+    --bg:#f6f2ea; --bg-2:#efe8da;
+    --glass:rgba(255,253,248,.74); --glass-solid:rgba(255,253,248,.96); --glass-2:rgba(243,236,223,.62);
+    --line:rgba(160,128,55,.16); --line-2:rgba(160,128,55,.4);
+    --gold:#a8842f; --gold-2:#b08a3a; --grad:linear-gradient(135deg,#b08a3a,#d6c088);
+    --txt:#241f18; --txt-2:#6b6459; --txt-3:#9a9183;
+    --ok:#4f9e74; --warn:#c2883a; --bad:#c75d5d; --info:#5a8bb0;
+    --r:16px; --r-sm:11px;
+    --shadow:0 18px 44px -22px rgba(60,45,20,.28);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    background:#0e0e10;display:grid;place-items:center;color:var(--txt)}
+  .serif{font-family:"Songti SC","STSong",Georgia,serif}
+  .gold{color:var(--gold-2)}.mono{font-variant-numeric:tabular-nums}
+  button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+  .ic{display:inline-flex;align-items:center;justify-content:center;line-height:0}
+  .ic svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+  /* phone frame */
+  .phone{width:390px;height:844px;max-height:96vh;background:var(--bg);border-radius:46px;
+    border:10px solid #1c1c1f;box-shadow:0 40px 90px -30px rgba(0,0,0,.9),inset 0 0 0 2px #2a2a2e;
+    position:relative;overflow:hidden;display:flex;flex-direction:column}
+  .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:120px;height:26px;background:#000;
+    border-radius:0 0 16px 16px;z-index:60}
+  .screen{position:absolute;inset:10px;border-radius:36px;overflow:hidden;background:var(--bg)}
+  .statusbar{height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;font-size:13px;color:var(--txt);z-index:30;position:relative}
+  .scroll{position:absolute;inset:44px 0 0;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth}
+  .scroll::-webkit-scrollbar{display:none}
+  .page{display:none;min-height:100%}
+  .page.on{display:block;animation:pg .4s cubic-bezier(.2,.8,.2,1)}
+  @keyframes pg{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+  /* spotlight */
+  .spotlight{position:relative}
+  .spotlight::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;transition:opacity .3s;
+    background:radial-gradient(220px circle at var(--mx,50%) var(--my,50%),rgba(176,138,58,.16),transparent 60%)}
+  .spotlight:hover::after{opacity:1}
+
+  /* glass card base */
+  .gc{background:var(--glass);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);backdrop-filter:blur(8px)}
+
+  /* HERO */
+  .hero{padding:16px 20px 22px;background:radial-gradient(120% 90% at 82% 0%,#f1e7cd,transparent 60%),linear-gradient(160deg,#fbf7ee,#f1e9d8);position:relative;transition:.3s}
+  .hero.shrink{padding-top:8px}
+  .hero .top{display:flex;align-items:center;gap:10px}
+  .hero .av{width:40px;height:40px;border-radius:12px;background:var(--grad);display:grid;place-items:center;color:#2a2113;font-weight:800;font-size:15px}
+  .hero .hi{font-size:13px;color:var(--txt-2)}.hero .hi b{color:var(--txt);font-size:15px;display:block;font-weight:700}
+  .hero .bell{margin-left:auto;width:38px;height:38px;border-radius:11px;background:var(--glass);border:1px solid var(--line);display:grid;place-items:center;color:var(--gold-2);position:relative}
+  .hero .bell .n{position:absolute;top:-4px;right:-4px;background:var(--bad);color:#fff;font-size:10px;min-width:16px;height:16px;border-radius:9px;display:grid;place-items:center;padding:0 3px}
+  .hero h1{font-size:23px;margin-top:14px;letter-spacing:1px}
+  .hero h1 small{display:block;color:var(--txt-3);font-size:11px;letter-spacing:3px;margin-top:5px;font-weight:400}
+  .search-pill{margin-top:16px;display:flex;align-items:center;gap:10px;background:var(--glass-solid);border:1px solid var(--line);border-radius:14px;padding:13px 16px;color:var(--txt-3);font-size:14px;box-shadow:var(--shadow)}
+  .search-pill .go{margin-left:auto;background:var(--grad);color:#2a2113;font-weight:700;font-size:12px;padding:7px 14px;border-radius:10px}
+  .hero.shrink .search-pill{margin-top:10px}
+
+  .sec-h{display:flex;align-items:center;justify-content:space-between;padding:22px 20px 12px}
+  .sec-h h2{font-size:16px;letter-spacing:1px;display:flex;align-items:center;gap:7px}
+  .sec-h h2 .bar{width:3px;height:15px;border-radius:3px;background:var(--grad)}
+  .sec-h a{font-size:12px;color:var(--gold-2)}
+
+  /* quick categories */
+  .quick{display:flex;gap:10px;padding:14px 20px 4px}
+  .quick .q{flex:1;background:var(--glass);border:1px solid var(--line);border-radius:14px;padding:14px 10px;text-align:center;transition:.2s;box-shadow:var(--shadow)}
+  .quick .q:active{transform:scale(.96)}
+  .quick .q .ic{width:22px;height:22px;color:var(--gold-2);margin:0 auto}
+  .quick .q .t{font-size:12px;color:var(--txt-2);margin-top:8px}
+  .quick .q .s{font-size:11px;color:var(--gold-2);margin-top:3px;font-weight:600}
+
+  /* swipe cards */
+  .swipe{display:flex;gap:14px;overflow-x:auto;padding:0 20px 6px;scroll-snap-type:x mandatory}
+  .swipe::-webkit-scrollbar{display:none}
+  .card{flex:0 0 268px;scroll-snap-align:start;background:var(--glass);border:1px solid var(--line);border-radius:18px;overflow:hidden;transition:.25s;box-shadow:var(--shadow)}
+  .card:active{transform:scale(.98)}
+  .card .img{height:150px;background-size:cover;background-position:center;position:relative;display:grid;place-items:center}
+  .card .img::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(36,31,24,.35))}
+  .card .img .tag-row{position:absolute;top:10px;left:10px;display:flex;gap:6px;z-index:2}
+  .mini{font-size:10.5px;padding:3px 9px;border-radius:7px;background:rgba(255,253,248,.85);backdrop-filter:blur(4px);color:var(--gold-2);border:1px solid var(--line)}
+  .card .img .fav{position:absolute;top:10px;right:10px;width:30px;height:30px;border-radius:50%;background:rgba(255,253,248,.85);display:grid;place-items:center;color:var(--gold-2);z-index:2}
+  .card .img .fav.on{color:var(--bad)}
+  .card .body{padding:13px 14px 15px}
+  .card .body .h{font-size:14px;font-weight:600}
+  .card .body .m{font-size:11.5px;color:var(--txt-3);margin:5px 0 9px}
+  .card .body .row{display:flex;align-items:baseline;justify-content:space-between}
+  .card .body .p{font-size:18px;color:var(--gold-2);font-weight:700}.card .body .p small{font-size:11px;color:var(--txt-3);font-weight:400}
+  .card .body .sc{font-size:11px;color:var(--txt-2)}
+
+  /* feed list */
+  .feed{padding:0 20px 20px;display:flex;flex-direction:column;gap:12px}
+  .fcard{display:flex;gap:12px;background:var(--glass);border:1px solid var(--line);border-radius:16px;padding:12px;transition:.25s;box-shadow:var(--shadow)}
+  .fcard:active{transform:scale(.99)}
+  .fcard .img{width:88px;height:88px;border-radius:12px;flex-shrink:0;background-size:cover;background-position:center;position:relative}
+  .fcard .info{flex:1;display:flex;flex-direction:column;min-width:0}
+  .fcard .info .t{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .fcard .info .d{font-size:11.5px;color:var(--txt-3);margin:4px 0 auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .fcard .info .bot{display:flex;align-items:baseline;justify-content:space-between}
+  .fcard .info .bot .p{color:var(--gold-2);font-weight:700;font-size:16px}.fcard .info .bot .p small{font-size:10px;color:var(--txt-3);font-weight:400}
+  .dist{font-size:11px;color:var(--txt-2)}
+
+  /* AI entrance banner */
+  .ai-banner{margin:6px 20px 0;display:flex;align-items:center;gap:12px;background:linear-gradient(120deg,rgba(176,138,58,.14),rgba(176,138,58,.04));border:1px solid var(--line-2);border-radius:16px;padding:13px 15px}
+  .ai-banner .ic{width:30px;height:30px;color:var(--gold-2);flex-shrink:0}
+  .ai-banner .t{font-size:13px;font-weight:600}.ai-banner .t small{display:block;color:var(--txt-3);font-size:11px;font-weight:400;margin-top:2px}
+  .ai-banner .go{margin-left:auto;background:var(--grad);color:#2a2113;font-weight:700;font-size:12px;padding:8px 14px;border-radius:11px}
+
+  /* AI chat */
+  .ai-hero{background:radial-gradient(120% 90% at 82% 0%,#f1e7cd,transparent 60%),linear-gradient(160deg,#fbf7ee,#f1e9d8);padding:22px 20px 18px}
+  .ai-hero .chip-ai{display:inline-flex;align-items:center;gap:8px;background:var(--grad);color:#2a2113;font-weight:700;font-size:12px;padding:7px 14px;border-radius:20px}
+  .ai-hero h2{font-size:20px;margin-top:14px;letter-spacing:1px}
+  .ai-hero p{font-size:13px;color:var(--txt-2);margin-top:8px;line-height:1.6}
+  .bubbles{padding:18px 20px;display:flex;flex-direction:column;gap:14px}
+  .b{display:flex;gap:10px;max-width:86%}
+  .b.ai{align-self:flex-start}.b.me{align-self:flex-end;flex-direction:row-reverse}
+  .b .av{width:30px;height:30px;border-radius:9px;flex-shrink:0;display:grid;place-items:center;font-size:13px}
+  .b.ai .av{background:var(--grad);color:#2a2113;font-weight:700}
+  .b.me .av{background:var(--surface-2);color:var(--gold-2);border:1px solid var(--line)}
+  .b .txt{padding:11px 14px;border-radius:14px;font-size:13px;line-height:1.6}
+  .b.ai .txt{background:var(--glass-solid);border:1px solid var(--line);border-top-left-radius:4px}
+  .b.me .txt{background:var(--grad);color:#2a2113;border-top-right-radius:4px;font-weight:500}
+  .quick-q{display:flex;gap:8px;flex-wrap:wrap;padding:0 20px 14px}
+  .quick-q button{font-size:12px;color:var(--gold-2);border:1px solid var(--line);border-radius:18px;padding:7px 13px;background:var(--glass)}
+  .ai-sugg{margin:6px 20px 20px;background:var(--glass);border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:var(--shadow)}
+  .ai-sugg h4{font-size:13px;color:var(--txt-2);margin-bottom:12px;letter-spacing:1px}
+  .house-mini{display:flex;gap:10px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:12px;margin-bottom:8px}
+  .house-mini .img{width:50px;height:50px;border-radius:9px;background-size:cover;background-position:center}
+  .house-mini .t{font-size:13px;font-weight:600}.house-mini .p{font-size:13px;color:var(--gold-2);font-weight:700;margin-left:auto}
+
+  /* message list */
+  .msg{padding:8px 16px 20px;display:flex;flex-direction:column;gap:6px}
+  .msg .it{display:flex;gap:12px;padding:12px 6px;border-bottom:1px solid var(--line);align-items:center;transition:.2s}
+  .msg .it:active{background:var(--glass-2)}
+  .msg .it .av{width:46px;height:46px;border-radius:13px;background:var(--glass-2);display:grid;place-items:center;color:var(--gold-2);flex-shrink:0;position:relative}
+  .msg .it .av .ic{width:22px;height:22px}
+  .msg .it .av .n{position:absolute;top:-3px;right:-3px;background:var(--bad);color:#fff;font-size:10px;min-width:17px;height:17px;border-radius:9px;display:grid;place-items:center;padding:0 4px}
+  .msg .it .c{flex:1;min-width:0}.msg .it .c .t{font-size:14px;font-weight:600;display:flex;justify-content:space-between}
+  .msg .it .c .t small{color:var(--txt-3);font-weight:400;font-size:11px}
+  .msg .it .c .s{font-size:12px;color:var(--txt-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:3px}
+
+  /* conversation */
+  .conv-head{height:56px;display:flex;align-items:center;gap:10px;padding:0 14px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--glass-solid);backdrop-filter:blur(10px);z-index:20}
+  .conv-head .ic{width:22px;height:22px;color:var(--gold-2)}
+  .conv-head .nm{font-size:15px;font-weight:600;flex:1}
+
+  /* my page */
+  .my-head{background:radial-gradient(120% 90% at 82% 0%,#f1e7cd,transparent 60%),linear-gradient(160deg,#fbf7ee,#f1e9d8);padding:24px 20px}
+  .my-head .u{display:flex;align-items:center;gap:14px}
+  .my-head .u .av{width:58px;height:58px;border-radius:18px;background:var(--grad);display:grid;place-items:center;color:#2a2113;font-size:22px;font-weight:800}
+  .my-head .u .nm{font-size:18px;font-weight:700}.my-head .u .nm small{display:block;color:var(--txt-3);font-size:12px;margin-top:4px;font-weight:400}
+  .my-stats{display:flex;margin-top:20px;background:var(--glass);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  .my-stats .s{flex:1;text-align:center;padding:14px 0}.my-stats .s+.s{border-left:1px solid var(--line)}
+  .my-stats .s b{font-size:18px;display:block}.my-stats .s span{font-size:11px;color:var(--txt-3)}
+  .menu-list{padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+  .menu-list .grp{background:var(--glass);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:var(--shadow)}
+  .menu-list .mi{display:flex;align-items:center;gap:13px;padding:15px 16px;border-bottom:1px solid var(--line);font-size:14px;transition:.2s}
+  .menu-list .mi:last-child{border-bottom:none}.menu-list .mi:active{background:var(--glass-2)}
+  .menu-list .mi .ic{width:20px;height:20px;color:var(--gold-2)}
+  .menu-list .mi .rt{margin-left:auto;color:var(--txt-3);font-size:13px}
+
+  /* bottom tab */
+  .tabbar{position:absolute;left:0;right:0;bottom:0;height:74px;background:var(--glass-solid);backdrop-filter:blur(20px);border-top:1px solid var(--line);display:flex;z-index:40;padding-bottom:8px}
+  .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--txt-3);font-size:11px;transition:.2s;position:relative}
+  .tab .ic{width:22px;height:22px;transition:.2s}
+  .tab.on{color:var(--gold-2)}
+  .tab.on .ic{transform:translateY(-2px)}
+  .tab.on::before{content:"";position:absolute;top:8px;width:26px;height:26px;border-radius:50%;background:rgba(176,138,58,.12)}
+  .indicator{position:absolute;bottom:6px;left:0;height:3px;border-radius:3px;background:var(--grad);transition:.3s}
+
+  /* FAB */
+  .fab{position:absolute;right:18px;bottom:90px;width:54px;height:54px;border-radius:50%;background:var(--grad);display:grid;place-items:center;font-size:24px;color:#2a2113;box-shadow:0 14px 30px -10px rgba(176,138,58,.7);z-index:45;transition:.2s}
+  .fab:active{transform:scale(.92)}
+  .fab .ic{width:24px;height:24px}
+
+  /* bottom sheet filter */
+  .sheet-scrim{position:absolute;inset:0;background:rgba(0,0,0,.55);z-index:50;opacity:0;pointer-events:none;transition:.3s}
+  .sheet-scrim.open{opacity:1;pointer-events:auto}
+  .sheet{position:absolute;left:0;right:0;bottom:0;background:var(--glass-solid);border-top:1px solid var(--line-2);border-radius:22px 22px 0 0;z-index:51;transform:translateY(100%);transition:.35s cubic-bezier(.2,.8,.2,1);padding:20px 20px 30px}
+  .sheet.open{transform:none}
+  .sheet .grab{width:40px;height:4px;border-radius:4px;background:var(--line-2);margin:0 auto 16px}
+  .sheet h3{font-size:16px;margin-bottom:14px}
+  .opt-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+  .opt{padding:9px 15px;border-radius:11px;background:var(--bg);border:1px solid var(--line);font-size:13px;color:var(--txt-2);transition:.2s}
+  .opt.on{background:rgba(176,138,58,.14);border-color:var(--line-2);color:var(--gold-2)}
+  .sheet .apply{width:100%;padding:14px;border-radius:13px;background:var(--grad);color:#2a2113;font-weight:700;letter-spacing:2px;margin-top:6px}
+
+  /* sub-head (sub pages) */
+  .sub-head{height:54px;display:flex;align-items:center;gap:6px;padding:0 14px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--glass-solid);backdrop-filter:blur(10px);z-index:20}
+  .sub-head .back{font-size:22px;color:var(--gold-2);width:36px;display:grid;place-items:center}
+  .sub-head .back .ic{width:22px;height:22px}
+  .sub-head .tt{font-size:16px;font-weight:600;flex:1;text-align:center;margin-right:36px}
+  .sub-body{padding:18px 20px 30px}
+
+  /* detail page */
+  .detail-hero{height:280px;background-size:cover;background-position:center;position:relative}
+  .detail-hero::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(36,31,24,.15),transparent 30%,transparent 55%,rgba(36,31,24,.4))}
+  .detail-hero .dots{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:3}
+  .detail-hero .dots i{width:6px;height:6px;border-radius:50%;background:rgba(255,253,248,.6)}
+  .detail-hero .dots i.on{background:#fff;width:18px;border-radius:4px}
+  .detail-hero .back{position:absolute;top:50px;left:16px;width:38px;height:38px;border-radius:50%;background:rgba(255,253,248,.85);display:grid;place-items:center;color:var(--txt);z-index:5}
+  .detail-hero .back .ic{width:20px;height:20px}
+  .detail-hero .fav{position:absolute;top:50px;right:16px;width:38px;height:38px;border-radius:50%;background:rgba(255,253,248,.85);display:grid;place-items:center;color:var(--gold-2);z-index:5}
+  .detail-hero .fav .ic{width:20px;height:20px}
+  .detail-hero .fav.on .ic{color:var(--bad)}
+  .dh-chip{position:absolute;bottom:14px;right:16px;background:rgba(255,253,248,.85);color:var(--txt);font-size:11px;padding:4px 10px;border-radius:8px;z-index:3}
+  .detail-body{margin:-20px 0 90px;position:relative;background:var(--bg);border-radius:24px 24px 0 0;padding:22px 20px}
+  .detail-body .h{font-size:20px;font-weight:700}.detail-body .loc{font-size:13px;color:var(--txt-2);margin:8px 0 14px;display:flex;align-items:center;gap:5px}
+  .detail-body .loc .ic{width:15px;height:15px;color:var(--gold-2)}
+  .tags{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+  .tags span{font-size:11.5px;color:var(--gold-2);border:1px solid var(--line);border-radius:8px;padding:5px 11px;background:rgba(176,138,58,.06)}
+  .price-box{display:flex;align-items:baseline;justify-content:space-between;background:var(--glass);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:18px;box-shadow:var(--shadow)}
+  .price-box .p{font-size:26px;color:var(--gold-2);font-weight:800}.price-box .p small{font-size:12px;color:var(--txt-3);font-weight:400}
+  .price-box .sc{font-size:12px;color:var(--txt-2);text-align:right}
+  .sec{margin-bottom:20px}.sec h4{font-size:14px;margin-bottom:10px;color:var(--txt);letter-spacing:1px;display:flex;align-items:center;gap:7px}
+  .sec h4 .bar{width:3px;height:14px;border-radius:3px;background:var(--grad)}
+  .sec p{font-size:13px;color:var(--txt-2);line-height:1.7}
+  .feat{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .feat .f{background:var(--glass);border:1px solid var(--line);border-radius:12px;padding:13px;text-align:center;box-shadow:var(--shadow)}
+  .feat .f .ic{width:20px;height:20px;color:var(--gold-2);margin:0 auto}
+  .feat .f .t{font-size:11.5px;color:var(--txt-2);margin-top:6px}
+  .ll{display:flex;gap:12px;padding:12px;border:1px solid var(--line);border-radius:12px;align-items:center;background:var(--glass)}
+  .ll .av{width:42px;height:42px;border-radius:11px;background:var(--grad);display:grid;place-items:center;color:#2a2113;font-weight:700}
+  .sticky-bar{position:absolute;left:0;right:0;bottom:0;height:74px;background:var(--glass-solid);backdrop-filter:blur(20px);border-top:1px solid var(--line);display:flex;align-items:center;gap:12px;padding:0 18px;z-index:40}
+  .sticky-bar .pv{font-size:20px;color:var(--gold-2);font-weight:800}.sticky-bar .pv small{font-size:11px;color:var(--txt-3);font-weight:400}
+  .sticky-bar .btns{flex:1;display:flex;gap:10px}
+  .sticky-bar .btns button{flex:1;padding:13px;border-radius:13px;font-size:13px;font-weight:600}
+  .sticky-bar .ghost{background:var(--glass);border:1px solid var(--line);color:var(--txt)}
+  .sticky-bar .gold{background:var(--grad);color:#2a2113}
+
+  /* chat bar (AI + conv) */
+  .chat-bar{position:absolute;left:0;right:0;bottom:0;background:var(--glass-solid);backdrop-filter:blur(20px);border-top:1px solid var(--line);display:none;align-items:center;gap:10px;padding:12px 16px;z-index:45}
+  .chat-bar.on{display:flex}
+  .chat-bar input{flex:1;background:var(--glass);border:1px solid var(--line);border-radius:22px;padding:12px 16px;font-size:14px;color:var(--txt);outline:none;font-family:inherit}
+  .chat-bar input:focus{border-color:var(--line-2)}
+  .chat-bar .send{width:46px;height:46px;border-radius:50%;background:var(--grad);color:#2a2113;display:grid;place-items:center;font-size:18px;flex-shrink:0;font-weight:700}
+  .chat-bar .send .ic{width:20px;height:20px}
+  #p-chat{padding-bottom:88px}#p-conv{padding-bottom:88px}
+
+  /* empty */
+  .empty{text-align:center;color:var(--txt-3);padding:48px 20px;font-size:13px}
+  .empty .ic{width:40px;height:40px;color:var(--line-2);margin:0 auto 12px}
+
+  /* ---------- mini-program login ---------- */
+  .login{position:absolute;inset:0;z-index:70;display:flex;flex-direction:column;background:linear-gradient(165deg,#fbf7ee,#f1e9d8);overflow:hidden}
+  .login-bg{position:absolute;inset:-7%;background:#1c1712 url('assets/hero1.png') center 28%/cover no-repeat;will-change:transform;transition:transform .14s ease-out}
+  .login-bg::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(16,12,8,.28) 0%,rgba(16,12,8,.52) 48%,rgba(12,9,6,.88) 100%)}
+  .login-glow{position:absolute;z-index:0;width:300px;height:300px;border-radius:50%;pointer-events:none;left:50%;top:34%;transform:translate(-50%,-50%);background:radial-gradient(circle,rgba(212,175,55,.42),transparent 70%);filter:blur(16px);mix-blend-mode:screen;will-change:left,top}
+  .login-inner{position:relative;z-index:1;flex:1;display:flex;flex-direction:column;padding:64px 30px 36px}
+  .brand{text-align:center;margin-top:24px}
+  .brand .logo{width:66px;height:66px;border-radius:21px;background:var(--grad);display:grid;place-items:center;color:#2a2113;font-weight:800;font-size:30px;margin:0 auto;box-shadow:0 16px 34px -14px rgba(176,138,58,.6)}
+  .brand .bn{font-size:22px;font-weight:800;margin-top:18px;letter-spacing:3px}
+  .brand .bs{font-size:12px;color:var(--txt-3);margin-top:9px;letter-spacing:1px}
+  .auth-wrap{margin:auto 0;display:flex;flex-direction:column;gap:18px}
+  .phone-mock{text-align:center}
+  .phone-mock .av{width:74px;height:74px;border-radius:50%;background:var(--glass);border:1px solid var(--line);display:grid;place-items:center;margin:0 auto;color:var(--gold-2)}
+  .phone-mock .av .ic{width:34px;height:34px}
+  .phone-mock .nm{font-size:16px;font-weight:700;margin-top:14px}
+  .phone-mock .sub{font-size:12px;color:var(--txt-3);margin-top:7px;padding:0 20px;line-height:1.6}
+  .wx-btn{width:100%;padding:15px;border-radius:14px;background:#07c160;color:#fff;font-weight:700;font-size:16px;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 16px 32px -14px rgba(7,193,96,.55);transition:.2s}
+  .wx-btn:active{transform:scale(.98)}
+  .wx-btn .ic{width:22px;height:22px;color:#fff}
+  .wx{display:inline-flex;align-items:center;justify-content:center;line-height:0}
+  .wx svg{width:22px;height:22px;fill:currentColor;stroke:none}
+  .switch-link{width:100%;text-align:center;color:var(--gold-2);font-size:13px;padding:12px;background:none;transition:.2s}
+  .switch-link:active{opacity:.6}
+  .back-link{align-self:flex-start;color:var(--txt-2);font-size:13px;padding:2px 0 4px}
+  .field2{margin-bottom:16px}
+  .field2 label{display:block;font-size:12.5px;color:var(--txt-2);margin-bottom:7px}
+  .ib{display:flex;align-items:center;gap:10px;background:var(--glass);border:1px solid var(--line);border-radius:13px;padding:0 14px;transition:.2s}
+  .ib:focus-within{border-color:var(--line-2);background:var(--glass-2)}
+  .ib .ic{width:18px;height:18px;color:var(--gold-2);flex-shrink:0}
+  .ib input{flex:1;width:100%;background:none;border:none;outline:none;padding:14px 0;color:var(--txt);font-size:14px;font-family:inherit}
+  .pw-toggle{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;color:var(--gold-2);flex-shrink:0;margin-right:-6px}
+  .pw-toggle .ic{width:19px;height:19px}
+  .login-btn{width:100%;padding:15px;border-radius:14px;background:var(--grad);color:#2a2113;font-weight:700;font-size:16px;letter-spacing:2px;transition:.2s}
+  .login-btn:active{transform:scale(.98)}
+  .agree{display:flex;align-items:flex-start;gap:8px;font-size:11.5px;color:var(--txt-3);line-height:1.65;margin-top:8px}
+  .agree a{color:var(--gold-2)}
+  .chk{position:relative;width:18px;height:18px;flex-shrink:0;margin-top:1px}
+  .chk input{position:absolute;inset:0;opacity:0;margin:0;cursor:pointer;width:100%;height:100%}
+  .chk .box{width:18px;height:18px;border-radius:6px;border:1px solid var(--line-2);display:grid;place-items:center;background:var(--glass);transition:.2s}
+  .chk input:checked + .box{background:var(--grad);border-color:transparent}
+  .chk input:checked + .box::after{content:"";width:9px;height:5px;border-left:2px solid #2a2113;border-bottom:2px solid #2a2113;transform:rotate(-45deg);margin-top:-2px}
+  /* login over dark photo: light text + glass */
+  .login .brand .bn{color:#fff}
+  .login .brand .bs{color:rgba(255,255,255,.72)}
+  .login .phone-mock .nm{color:#fff}
+  .login .phone-mock .sub{color:rgba(255,255,255,.72)}
+  .login .phone-mock .av{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.22);color:#fff}
+  .login .switch-link{color:#e7cf8e}
+  .login .back-link{color:rgba(255,255,255,.75)}
+  .login .field2 label{color:rgba(255,255,255,.85)}
+  .login .ib{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.22)}
+  .login .ib:focus-within{border-color:rgba(231,207,142,.7);background:rgba(255,255,255,.17)}
+  .login .ib .ic{color:#e7cf8e}
+  .login .ib input{color:#fff}
+  .login .ib input::placeholder{color:rgba(255,255,255,.5)}
+  .login .agree{color:rgba(255,255,255,.8)}
+  .login .agree a{color:#e7cf8e}
+  .login .chk .box{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.35)}
+  .login .login-inner{z-index:2}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="notch"></div>
+  <div class="screen">
+    <div class="statusbar"><span>9:41</span><span class="dots">⌖ 5G ▮▮▮▮ 100%</span></div>
+    <div class="scroll" id="scroll">
+      <!-- HOME -->
+      <section class="page on" id="p-home">
+        <div class="hero" id="hero">
+          <div class="top">
+            <div class="av">张</div>
+            <div class="hi">下午好，<b>张明</b></div>
+            <div class="bell" onclick="go('p-msg')" data-ic="bell"><span class="n">3</span></div>
+          </div>
+          <h1 class="serif">找到你的理想居所<small>ZHIGU SMART RENT</small></h1>
+          <div class="search-pill" onclick="openSheet()"><span class="ic" data-ic="search" style="width:18px;height:18px;color:var(--gold-2)"></span> 搜索小区、地铁、商圈… <span class="go">搜索</span></div>
+        </div>
+        <div class="quick">
+          <div class="q spotlight" onclick="go('p-search')"><span class="ic" data-ic="home"></span><div class="t">整租</div><div class="s">3,265 套</div></div>
+          <div class="q spotlight" onclick="go('p-search')"><span class="ic" data-ic="users"></span><div class="t">合租</div><div class="s">980 套</div></div>
+          <div class="q spotlight" onclick="go('p-search')"><span class="ic" data-ic="building"></span><div class="t">公寓</div><div class="s">560 套</div></div>
+          <div class="q spotlight" onclick="go('p-detail')"><span class="ic" data-ic="map"></span><div class="t">地图</div><div class="s">附近</div></div>
+        </div>
+        <div class="ai-banner" onclick="go('p-chat')"><span class="ic" data-ic="ai"></span><div class="t">AI 智能找房<small>告诉预算与偏好，秒出匹配房源</small></div><span class="go">试试</span></div>
+        <div class="sec-h"><h2><span class="bar"></span>为你推荐</h2><a onclick="go('p-search')">更多 ›</a></div>
+        <div class="swipe" id="swipe"></div>
+        <div class="sec-h"><h2><span class="bar"></span>最近上新</h2><a onclick="go('p-search')">查看 ›</a></div>
+        <div class="feed" id="feed"></div>
+      </section>
+
+      <!-- SEARCH -->
+      <section class="page" id="p-search">
+        <div class="sub-head"><button class="back" onclick="back()"><span class="ic" data-ic="chev"></span></button><div class="tt">找房</div></div>
+        <div class="sub-body">
+          <div class="search-pill" style="margin:0 0 18px" onclick="openSheet()"><span class="ic" data-ic="search" style="width:18px;height:18px;color:var(--gold-2)"></span> 上海 · 不限商圈 <span class="go">筛</span></div>
+          <div class="opt-row" style="margin-bottom:14px" id="sortRow">
+            <span class="opt on" data-s="default" onclick="toggleSort(this)">默认排序</span><span class="opt" data-s="up" onclick="toggleSort(this)">租金↑</span><span class="opt" data-s="down" onclick="toggleSort(this)">租金↓</span><span class="opt" data-s="new" onclick="toggleSort(this)">最新</span>
+          </div>
+          <div class="feed" id="feed2"></div>
+        </div>
+      </section>
+
+      <!-- DETAIL -->
+      <section class="page" id="p-detail">
+        <div class="detail-hero" id="dHero">
+          <button class="back" onclick="back()"><span class="ic" data-ic="chev"></span></button>
+          <button class="fav" id="dFav" onclick="toggleFav()"><span class="ic" data-ic="heart"></span></button>
+          <div class="dots"><i class="on"></i><i></i><i></i><i></i></div><div class="dh-chip">1 / 4</div>
+        </div>
+        <div class="detail-body">
+          <div class="h serif">阳光花园 3室1厅</div>
+          <div class="loc"><span class="ic" data-ic="pin"></span> 徐汇区 · 上海南站 · 距地铁 320m</div>
+          <div class="tags"><span>整租</span><span>89㎡</span><span>南向</span><span>精装修</span><span>可短租</span><span>近地铁</span></div>
+          <div class="price-box"><div class="p mono">¥4,200<small>/月</small></div><div class="sc">押一付三<br>含物业</div></div>
+          <div class="sec"><h4><span class="bar"></span>户型亮点</h4><div class="feat">
+            <div class="f"><span class="ic" data-ic="home"></span><div class="t">3 室</div></div>
+            <div class="f"><span class="ic" data-ic="bill"></span><div class="t">1 卫</div></div>
+            <div class="f"><span class="ic" data-ic="building"></span><div class="t">独立厨</div></div>
+            <div class="f"><span class="ic" data-ic="map"></span><div class="t">南向</div></div>
+            <div class="f"><span class="ic" data-ic="pin"></span><div class="t">近地铁</div></div>
+            <div class="f"><span class="ic" data-ic="heart"></span><div class="t">可养宠</div></div>
+          </div></div>
+          <div class="sec"><h4><span class="bar"></span>房源描述</h4><p>阳光花园位于徐汇核心板块，南北通透三居，精装修拎包入住。小区绿化率达 40%，配套健身与儿童乐园，步行 5 分钟至地铁站，周边商圈、医院一应俱全。</p></div>
+          <div class="sec"><h4><span class="bar"></span>房东信息</h4><div class="ll" onclick="openConv('陈先生')" style="cursor:pointer"><div class="av">陈</div><div style="flex:1"><div style="font-weight:600">陈先生 · 房东</div><div style="font-size:12px;color:var(--txt-3);margin-top:3px">实名认证 · 响应率 98%</div></div><div style="color:var(--gold-2);font-size:13px">发消息 ›</div></div></div>
+          <div class="sec"><h4><span class="bar"></span>AI 智能评估</h4><p style="color:var(--gold-2)">综合地段、租金、配套评估：该房源性价比 4.6 / 5，低于同板块均价 8%，推荐指数 ★★★★☆。</p></div>
+        </div>
+        <div class="sticky-bar">
+          <div class="pv mono">¥4,200<small>/月</small></div>
+          <div class="btns"><button class="ghost" onclick="go('p-chat')">问 AI</button><button class="gold" onclick="go('p-appoint')">预约看房</button></div>
+        </div>
+      </section>
+
+      <!-- APPOINT -->
+      <section class="page" id="p-appoint">
+        <div class="sub-head"><button class="back" onclick="back()"><span class="ic" data-ic="chev"></span></button><div class="tt">预约看房</div></div>
+        <div class="sub-body">
+          <div class="ll" style="margin-bottom:18px"><div class="av">陈</div><div style="flex:1"><div style="font-weight:600">阳光花园 3室1厅</div><div style="font-size:12px;color:var(--txt-3);margin-top:3px">陈先生 · 徐汇区</div></div><div class="mono gold">¥4,200/月</div></div>
+          <div class="sec"><h4><span class="bar"></span>选择日期</h4><div class="opt-row" id="dates"></div></div>
+          <div class="sec"><h4><span class="bar"></span>选择时间段</h4><div class="opt-row">
+            <span class="opt on" onclick="toggleOpt(this)">09:00</span><span class="opt" onclick="toggleOpt(this)">11:00</span><span class="opt" onclick="toggleOpt(this)">14:00</span><span class="opt" onclick="toggleOpt(this)">16:00</span><span class="opt" onclick="toggleOpt(this)">19:00</span></div></div>
+          <div class="sec"><h4><span class="bar"></span>留言（选填）</h4><textarea rows="3" placeholder="如：希望周末看房，两人同行…" style="width:100%;background:var(--glass);border:1px solid var(--line);border-radius:12px;color:var(--txt);padding:12px;font-family:inherit;font-size:13px;resize:none;outline:none"></textarea></div>
+          <button class="btn gold" style="width:100%;padding:15px;border-radius:13px;font-weight:700;letter-spacing:2px;background:var(--grad);color:#2a2113" onclick="toast('预约已提交，待房东确认');go('p-my')">提交预约</button>
+        </div>
+      </section>
+
+      <!-- CHAT (AI) -->
+      <section class="page" id="p-chat">
+        <div class="ai-hero"><span class="chip-ai"><span class="ic" data-ic="ai" style="width:14px;height:14px"></span> AI 租房顾问</span><h2 class="serif">想找什么样的家？</h2><p>告诉我预算、区域和偏好，我来为你智能匹配并估算性价比。</p></div>
+        <div class="bubbles" id="bubbles">
+          <div class="b ai"><div class="av">✦</div><div class="txt">你好，我是智居 AI。想租在哪个区域？预算大概多少呢？</div></div>
+        </div>
+        <div class="quick-q" id="quickq">
+          <button onclick="aiSay('预算3000以内的整租')">3000内整租</button>
+          <button onclick="aiSay('近地铁的合租')">近地铁合租</button>
+          <button onclick="aiSay('可养宠物的公寓')">可养宠物</button>
+        </div>
+        <div class="ai-sugg"><h4>基于你的偏好，AI 推荐</h4>
+          <div class="house-mini" onclick="go('p-detail')"><div class="img" style="background-image:url(assets/hero2.png)"></div><div style="flex:1"><div class="t">阳光花园 3室1厅</div><div style="font-size:11.5px;color:var(--txt-3)">徐汇 · 89㎡ · 匹配度 92%</div></div><div class="p mono">¥4,200</div></div>
+          <div class="house-mini" onclick="go('p-detail')"><div class="img" style="background-image:url(assets/hero3.png)"></div><div style="flex:1"><div class="t">江景公寓 1室1厅</div><div style="font-size:11.5px;color:var(--txt-3)">黄浦 · 55㎡ · 匹配度 85%</div></div><div class="p mono">¥2,800</div></div>
+        </div>
+      </section>
+
+      <!-- MESSAGE -->
+      <section class="page" id="p-msg">
+        <div class="sub-head"><button class="back" onclick="back()"><span class="ic" data-ic="chev"></span></button><div class="tt">消息</div><div style="width:36px;text-align:right;color:var(--gold-2);font-size:13px" onclick="toast('已全部标为已读')">已读</div></div>
+        <div class="msg" id="msgList"></div>
+      </section>
+
+      <!-- CONVERSATION -->
+      <section class="page" id="p-conv">
+        <div class="conv-head"><button class="back" onclick="back()"><span class="ic" data-ic="chev"></span></button><div class="nm" id="convNm">会话</div><span class="ic" data-ic="more" style="width:20px;height:20px;color:var(--txt-3)"></span></div>
+        <div class="bubbles" id="convBubbles"></div>
+      </section>
+
+      <!-- MY -->
+      <section class="page" id="p-my">
+        <div class="my-head"><div class="u"><div class="av">张</div><div class="nm">张明 <small>租客 · 实名已认证</small></div></div>
+          <div class="my-stats"><div class="s"><b class="mono">6</b><span>收藏</span></div><div class="s"><b class="mono">23</b><span>浏览</span></div><div class="s"><b class="mono">2</b><span>预约</span></div><div class="s"><b class="mono">1</b><span>合同</span></div></div></div>
+        <div class="menu-list">
+          <div class="grp"><div class="mi" onclick="go('p-sub',this)" data-t="我的收藏"><span class="ic" data-ic="heart"></span>我的收藏<span class="rt">6 ›</span></div><div class="mi" onclick="go('p-sub',this)" data-t="浏览历史"><span class="ic" data-ic="cal"></span>浏览历史<span class="rt">23 ›</span></div><div class="mi" onclick="go('p-sub',this)" data-t="我的预约"><span class="ic" data-ic="appt"></span>我的预约<span class="rt">2 ›</span></div></div>
+          <div class="grp"><div class="mi" onclick="go('p-sub',this)" data-t="我的合同"><span class="ic" data-ic="doc"></span>我的合同<span class="rt">1 ›</span></div><div class="mi" onclick="go('p-sub',this)" data-t="账单中心"><span class="ic" data-ic="bill"></span>账单中心<span class="rt">›</span></div><div class="mi" onclick="go('p-sub',this)" data-t="租房偏好"><span class="ic" data-ic="gear"></span>租房偏好<span class="rt">›</span></div></div>
+          <div class="grp"><div class="mi" onclick="toast('打开我的评价')"><span class="ic" data-ic="star"></span>我的评价<span class="rt">4.8 ›</span></div><div class="mi" onclick="toast('打开帮助与反馈')"><span class="ic" data-ic="help"></span>帮助与反馈<span class="rt">›</span></div></div>
+        </div>
+      </section>
+
+      <!-- GENERIC SUB -->
+      <section class="page" id="p-sub">
+        <div class="sub-head"><button class="back" onclick="back()"><span class="ic" data-ic="chev"></span></button><div class="tt" id="sub-tt">详情</div></div>
+        <div class="sub-body" id="sub-body"></div>
+      </section>
+    </div>
+
+    <button class="fab" onclick="go('p-chat')"><span class="ic" data-ic="ai"></span></button>
+
+    <nav class="tabbar" id="tabbar">
+      <div class="tab on" data-p="p-home" onclick="go('p-home')"><span class="ic" data-ic="home"></span>首页</div>
+      <div class="tab" data-p="p-search" onclick="go('p-search')"><span class="ic" data-ic="search"></span>找房</div>
+      <div class="tab" data-p="p-msg" onclick="go('p-msg')"><span class="ic" data-ic="msg"></span>消息</div>
+      <div class="tab" data-p="p-my" onclick="go('p-my')"><span class="ic" data-ic="user"></span>我的</div>
+      <div class="indicator" id="ind"></div>
+    </nav>
+
+    <div class="sheet-scrim" id="ss" onclick="closeSheet()"></div>
+    <div class="sheet" id="sheet"><div class="grab"></div><h3>筛选</h3>
+      <div style="font-size:12px;color:var(--txt-3);margin-bottom:6px">租金范围</div>
+      <div class="opt-row"><span class="opt" onclick="toggleOpt(this)">1500以下</span><span class="opt on" onclick="toggleOpt(this)">1500-3000</span><span class="opt" onclick="toggleOpt(this)">3000-5000</span><span class="opt" onclick="toggleOpt(this)">5000以上</span></div>
+      <div style="font-size:12px;color:var(--txt-3);margin-bottom:6px">户型</div>
+      <div class="opt-row"><span class="opt" onclick="toggleOpt(this)">单间</span><span class="opt on" onclick="toggleOpt(this)">一室</span><span class="opt" onclick="toggleOpt(this)">两室</span><span class="opt" onclick="toggleOpt(this)">三室+</span></div>
+      <div style="font-size:12px;color:var(--txt-3);margin-bottom:6px">特色</div>
+      <div class="opt-row"><span class="opt" onclick="toggleOpt(this)">近地铁</span><span class="opt" onclick="toggleOpt(this)">可养宠</span><span class="opt" onclick="toggleOpt(this)">精装修</span><span class="opt" onclick="toggleOpt(this)">电梯</span></div>
+      <button class="apply" onclick="closeSheet();toast('已应用筛选')">查看 3,265 套结果</button>
+    </div>
+
+    <div class="chat-bar" id="chatbar">
+      <input id="chatInput" placeholder="说点什么，比如：3000内整租近地铁…" onkeydown="if(event.key==='Enter')sendChat()"/>
+      <button class="send" onclick="sendChat()"><span class="ic" data-ic="send"></span></button>
+    </div>
+
+    <div class="login" id="login">
+      <div class="login-bg"></div>
+      <div class="login-glow"></div>
+      <div class="login-inner">
+        <div class="brand"><div class="logo">智</div><div class="bn">智居租房</div><div class="bs">让租房更智能、更安心</div></div>
+        <div class="auth-wrap">
+          <div class="auth-view" id="tenantAuth">
+            <div class="phone-mock"><div class="av"><span class="ic" data-ic="user"></span></div><div class="nm">微信用户</div><div class="sub">智居租房 申请使用你的微信头像与昵称</div></div>
+            <button class="wx-btn" id="tenantWx" onclick="doWxLogin('tenant')"><span class="ic wx" data-ic="wechat"></span> 微信授权登录</button>
+            <button class="switch-link" onclick="showPwd('tenant')">使用账号密码登录 ›</button>
+          </div>
+          <div class="pwd-view" id="tenantPwd" style="display:none">
+            <button class="back-link" onclick="showAuth('tenant')">‹ 返回微信授权</button>
+            <div class="field2"><label>手机号 / 账号</label><div class="ib"><span class="ic" data-ic="user"></span><input id="tenantUser" placeholder="请输入手机号或账号"/></div></div>
+            <div class="field2"><label>密码</label><div class="ib"><input id="tenantPwdI" type="password" placeholder="请输入密码" value="123456"/><button class="pw-toggle" id="tenantPwToggle" type="button" aria-label="显示密码" onclick="togglePw('tenant')"><span class="ic" data-ic="eye"></span></button></div></div>
+            <button class="login-btn" onclick="doPwdLogin('tenant')">登录</button>
+            <button class="switch-link" onclick="showAuth('tenant')">使用微信授权登录</button>
+          </div>
+        </div>
+        <div class="agree"><label class="chk"><input type="checkbox" id="tenantAgree"/><span class="box"></span></label><span>我已阅读并同意 <a onclick="toast('查看用户协议')">《用户协议》</a> 与 <a onclick="toast('查看隐私政策')">《隐私政策》</a>，并授权微信登录</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------- icons ---------- */
+var ICON={
+  home:'<path d="M3 11l9-7 9 7"/><path d="M5 10v9h14v-9"/>',
+  search:'<circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/>',
+  msg:'<path d="M4 5h16v11H8l-4 4z"/>',
+  user:'<circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  cal:'<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 9h16M8 3v4M16 3v4"/>',
+  appt:'<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 9h16M8 3v4M16 3v4"/>',
+  users:'<circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5"/><path d="M16 6a3 3 0 0 1 0 6"/><path d="M18 20c0-2-1-4-3-5"/>',
+  building:'<rect x="6" y="3" width="12" height="18" rx="1.5"/><path d="M9 7h.01M15 7h.01M9 11h.01M15 11h.01M9 15h.01M15 15h.01"/>',
+  map:'<path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/>',
+  heart:'<path d="M12 20s-7-4.5-9.5-9C1 8 2.5 4 6 4c2 0 3.2 1.2 4 2.3C10.8 5.2 12 4 14 4c3.5 0 5 4 3.5 7-2.5 4.5-9.5 9-9.5 9z"/>',
+  star:'<path d="M12 4l2.3 4.7 5.2.8-4.7 4.6.9 5.1L12 16.9 7.4 18.2l.9-5.1L4.5 9.5l5.2-.8z"/>',
+  doc:'<path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4"/><path d="M10 12h6M10 15h6"/>',
+  bill:'<rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18M7 14h4"/>',
+  gear:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>',
+  help:'<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 4.5 1.5c0 1.5-2 2-2 3.5"/><path d="M12 17h.01"/>',
+  bell:'<path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6z"/><path d="M10 20a2 2 0 0 0 4 0"/>',
+  ai:'<path d="M12 3l1.8 4.7L18.5 9l-4.7 1.8L12 15l-1.8-4.2L5.5 9l4.7-1.3z"/><path d="M18 14l.9 2.3L21 17l-2.1.8L18 20l-.9-2.2L15 17l2.1-.7z"/>',
+  chev:'<path d="M15 5l-7 7 7 7"/>',
+  check:'<path d="M5 13l4 4L19 7"/>',
+  pin:'<path d="M12 21s-6-5.5-6-10a6 6 0 0 1 12 0c0 4.5-6 10-6 10z"/><circle cx="12" cy="11" r="2"/>',
+  send:'<path d="M5 12l14-7-5 14-3-5z"/>',
+  more:'<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>',
+  wechat:'<path style="fill:currentColor;stroke:none" d="M8.6 3.2C5 3.2 2 5.8 2 9c0 1.7.9 3.2 2.4 4.2l-.7 2.1 2.4-1.2c.7.2 1.4.3 2.1.3h.5C11.4 14.5 12 12.9 12 11.1 12 6.5 9.3 3.2 8.6 3.2z"/><circle style="fill:#fff;stroke:none" cx="5.6" cy="8" r="1"/><circle style="fill:#fff;stroke:none" cx="9.2" cy="8" r="1"/><path style="fill:currentColor;stroke:none" d="M22 11.2C22 8.3 19.2 6 16.1 6c-2.9 0-5.3 1.9-5.8 4.4C11 10.3 12.8 9.9 14.7 9.9c2.6 0 4.8 1.7 4.8 3.8 0 1.7-1.2 3.1-2.9 3.8.7.2 1.4.3 2.1.3 2.3 0 4.3-1.7 4.3-4.1 0-.3 0-.5-.1-.8z"/><circle style="fill:#fff;stroke:none" cx="14.7" cy="10" r=".95"/><circle style="fill:#fff;stroke:none" cx="17.6" cy="10" r=".95"/>',
+  eye:'<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  eyeoff:'<path d="M2 12s3.5-7 10-7c1.7 0 3.2.4 4.6 1.1M22 12s-3.5 7-10 7c-1.7 0-3.2-.4-4.6-1.1"/><path d="M3 3l18 18"/><path d="M9.7 9.7a3 3 0 0 0 4.2 4.2"/>'
+};
+function svg(n,s){return '<svg viewBox="0 0 24 24" style="width:'+s+'px;height:'+s+'px">'+(ICON[n]||'')+'</svg>';}
+function initIcons(){document.querySelectorAll('[data-ic]').forEach(function(el){el.innerHTML=svg(el.dataset.ic,el.firstChild&&el.firstChild.nodeType===3?18:18);});}
+
+/* ---------- nav ---------- */
+var hist=[];
+var BACK={ 'p-search':'p-home','p-detail':'p-home','p-appoint':'p-detail','p-conv':'p-msg','p-sub':'p-my' };
+function go(p,el){
+  if(p==='p-sub'&&el){document.getElementById('sub-tt').textContent=el.dataset.t;renderSub(el.dataset.t);}
+  document.querySelectorAll('.page').forEach(function(x){x.classList.remove('on')});
+  var pg=document.getElementById(p); pg.classList.add('on');
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.toggle('on',t.dataset.p===p)});
+  moveInd();
+  document.getElementById('scroll').scrollTop=0;
+  if(p!=='p-sub'&&p!=='p-conv'&&p!=='p-msg')hist.push(p);
+  if(p==='p-home')simulateHero();
+  var chatOn=(p==='p-chat'||p==='p-conv');
+  document.getElementById('chatbar').classList.toggle('on',chatOn);
+  document.querySelector('.fab').style.display=chatOn?'none':'';
+}
+function back(){var prev=BACK[hist[hist.length-1]]||'p-home';var cur=hist.pop();go(prev);}
+function moveInd(){var on=document.querySelector('.tab.on');if(on){var r=on.getBoundingClientRect(),bar=document.getElementById('tabbar').getBoundingClientRect();var i=document.getElementById('ind');i.style.width=r.width*0.5+'px';i.style.left=(r.left-bar.left+r.width*0.25)+'px';}}
+
+function toggleOpt(el){var g=el.parentElement;if(g.classList.contains('opt-row')){g.querySelectorAll('.opt').forEach(function(x){x.classList.remove('on')});el.classList.add('on');}}
+function toggleSort(el){document.querySelectorAll('#sortRow .opt').forEach(function(x){x.classList.remove('on')});el.classList.add('on');renderFeed(el.dataset.s);toast('已按「'+el.textContent+'」排序');}
+
+/* ---------- data ---------- */
+var HOUSES=[
+  {t:'阳光花园 3室1厅',d:'徐汇 · 89㎡ · 南向',p:4200,dist:'2.1km',img:'assets/hero2.png',tags:['整租','近地铁']},
+  {t:'江景公寓 1室1厅',d:'黄浦 · 55㎡ · 高层',p:2800,dist:'3.4km',img:'assets/hero3.png',tags:['江景']},
+  {t:'中央公馆 2室1厅',d:'静安 · 76㎡ · 精装',p:5500,dist:'1.8km',img:'assets/g2.png',tags:['精装修']},
+  {t:'云栖小镇 LOFT',d:'西湖 · 45㎡ · 复式',p:3600,dist:'4.0km',img:'assets/g1.png',tags:['LOFT']},
+  {t:'翠湖天地 4室2厅',d:'浦东 · 132㎡ · 江景',p:8900,dist:'5.2km',img:'assets/hero1.png',tags:['整租','江景']}
+];
+function cardHTML(h){return '<div class="card spotlight" onclick="go(\'p-detail\')"><div class="img" style="background-image:url('+h.img+')"><div class="tag-row">'+h.tags.map(function(x){return '<span class="mini">'+x+'</span>'}).join('')+'</div><button class="fav" onclick="event.stopPropagation();toggleFavList(this)"><span class="ic" data-ic="heart"></span></button></div><div class="body"><div class="h">'+h.t+'</div><div class="m">'+h.d+'</div><div class="row"><div class="p mono">¥'+h.p+'<small>/月</small></div><div class="sc">★ 4.8</div></div></div></div>';}
+function feedHTML(h){return '<div class="fcard spotlight" onclick="go(\'p-detail\')"><div class="img" style="background-image:url('+h.img+')"></div><div class="info"><div class="t">'+h.t+'</div><div class="d">'+h.d+'</div><div class="bot"><div class="p mono">¥'+h.p+'<small>/月</small></div><div class="dist">'+h.dist+'</div></div></div></div>';}
+function renderFeed(sort){
+  var arr=HOUSES.slice();
+  if(sort==='up')arr.sort(function(a,b){return a.p-b.p});
+  if(sort==='down')arr.sort(function(a,b){return b.p-a.p});
+  if(sort==='new')arr.reverse();
+  document.getElementById('feed2').innerHTML=arr.map(feedHTML).join('');
+  initIcons();
+}
+function buildHome(){
+  document.getElementById('swipe').innerHTML=HOUSES.slice(0,3).map(cardHTML).join('');
+  document.getElementById('feed').innerHTML=HOUSES.map(feedHTML).join('');
+  initIcons();
+  bindSpot(document.getElementById('p-home'));
+}
+function toggleFavList(b){b.classList.toggle('on');initIcons();toast(b.classList.contains('on')?'已加入收藏':'已取消收藏');}
+function toggleFav(){var f=document.getElementById('dFav');f.classList.toggle('on');initIcons();toast(f.classList.contains('on')?'已收藏该房源':'已取消收藏');}
+
+/* hero collapse */
+var hero=document.getElementById('hero');
+document.getElementById('scroll').addEventListener('scroll',function(){hero.classList.toggle('shrink',this.scrollTop>30);});
+function simulateHero(){hero.classList.remove('shrink');}
+
+/* ---------- AI chat ---------- */
+function scrollBottom(){var s=document.getElementById('scroll');s.scrollTop=s.scrollHeight;}
+function aiReply(v){
+  if(/3000|预算/.test(v))return '已为你筛选 3000 以内的整租房源 3 套，最高性价比推荐阳光花园（匹配度 92%）。';
+  if(/地铁/.test(v))return '近地铁房源已整理，优先推荐距地铁 500m 内 2 套，通勤更省心。';
+  if(/宠物|宠/.test(v))return '可养宠物的公寓有 4 套，已标注宠物友好设施，点击查看详情。';
+  if(/江景|黄浦/.test(v))return '黄浦江景房已匹配 2 套，视野与采光俱佳，详见下方推荐。';
+  return '收到，正在为你匹配「'+v+'」相关房源，已找到 3 套候选，详见下方推荐。';
+}
+function aiSay(txt){
+  var b=document.getElementById('bubbles');
+  b.innerHTML+='<div class="b me"><div class="av">张</div><div class="txt">'+txt+'</div></div>';
+  setTimeout(function(){b.innerHTML+='<div class="b ai"><div class="av">✦</div><div class="txt">'+aiReply(txt)+'</div></div>';scrollBottom();},700);
+  scrollBottom();
+}
+function sendChat(){
+  var p=document.querySelector('.page.on');if(!p)return;var pid=p.id;
+  var target=(pid==='p-conv')?'convBubbles':'bubbles';
+  var i=document.getElementById('chatInput');var v=i.value.trim();if(!v)return;i.value='';
+  var b=document.getElementById(target);
+  b.innerHTML+='<div class="b me"><div class="av">张</div><div class="txt">'+v+'</div></div>';
+  var reply,av;
+  if(pid==='p-conv'){av=document.getElementById('convNm').textContent.slice(0,1);reply='收到，关于「'+v+'」我稍后回复你～';}
+  else{av='✦';reply=aiReply(v);}
+  setTimeout(function(){b.innerHTML+='<div class="b ai"><div class="av">'+av+'</div><div class="txt">'+reply+'</div></div>';scrollBottom();},600);
+  scrollBottom();
+}
+
+/* ---------- messages ---------- */
+var MSG=[
+  {ic:'ai',name:'智居 AI 助手',time:'10:24',last:'为你找到 3 套匹配房源，点击查看 →',n:2,conv:[['ai','你好，我是智居 AI 助手。已根据你的浏览偏好整理 3 套房源，需要我详细介绍吗？']]},
+  {ic:'user',name:'陈先生（房东）',time:'09:50',last:'看房时间已确认，周六 14:00 见 👌',n:0,conv:[['he','你好，阳光花园的看房时间定在周六 14:00，方便吗？'],['me','可以呀，准时到！'],['he','看房时间已确认，周六 14:00 见 👌']]},
+  {ic:'gear',name:'系统通知',time:'昨天',last:'合同 HT2026070001 已生成，请签署',n:0,conv:[['sys','您的合同 HT2026070001 已生成，请在「我的合同」中查看并签署。']]},
+  {ic:'user',name:'李婷',time:'周一',last:'HI，合租的房间还空着吗？',n:0,conv:[['she','HI，合租的房间还空着吗？'],['me','还在的，需要带你看下吗？']]}
+];
+function buildMsg(){
+  document.getElementById('msgList').innerHTML=MSG.map(function(m,i){
+    var cls=m.ic==='ai'?'ai':(m.ic==='gear'?'gear':'user');
+    return '<div class="it spotlight" onclick="openConv('+i+')"><div class="av" data-ic="'+cls+'"></div><div class="c"><div class="t">'+m.name+' <small>'+m.time+'</small></div><div class="s">'+m.last+'</div></div>'+(m.n?'<span class="n">'+m.n+'</span>':'')+'</div>';
+  }).join('');
+  initIcons();
+}
+function openConv(arg){
+  var m=typeof arg==='number'?MSG[arg]:{name:arg,conv:[['he','你好，我是'+arg+'，很高兴为你服务～']]};
+  document.getElementById('convNm').textContent=m.name;
+  var b=document.getElementById('convBubbles');
+  b.innerHTML=(m.conv||[]).map(function(c){
+    if(c[0]==='me')return '<div class="b me"><div class="av">张</div><div class="txt">'+c[1]+'</div></div>';
+    var av=m.name.slice(0,1);
+    return '<div class="b ai"><div class="av">'+av+'</div><div class="txt">'+c[1]+'</div></div>';
+  }).join('');
+  go('p-conv');scrollBottom();
+}
+
+/* ---------- sub pages ---------- */
+function renderSub(t){
+  var b=document.getElementById('sub-body');var map={
+    '我的收藏':[['阳光花园 3室1厅','徐汇 · 89㎡',4200,'assets/hero2.png'],['江景公寓 1室1厅','黄浦 · 55㎡',2800,'assets/hero3.png'],['云栖小镇 LOFT','西湖 · 45㎡',3600,'assets/g1.png']],
+    '浏览历史':[['中央公馆 2室1厅','静安 · 76㎡',5500,'assets/g2.png'],['翠湖天地 4室2厅','浦东 · 132㎡',8900,'assets/hero1.png']],
+    '我的预约':[['阳光花园 3室1厅','周六 14:00 · 待确认'],['江景公寓 1室1厅','已确认 · 已完成']],
+    '我的合同':[['HT2026070001','阳光花园 · 待签署 · ¥4,200']],
+    '账单中心':[['2026-07 房租','已支付 · ¥4,200'],['2026-06 房租','已支付 · ¥4,200']],
+    '租房偏好':[['预算','3000-5000 / 月'],['区域','徐汇 / 黄浦'],['户型','整租 · 两室+']]
+  };
+  var rows=map[t]||[];
+  b.innerHTML=rows.length?rows.map(function(r){
+    var hasImg=!!r[3];
+    return '<div class="fcard spotlight" onclick="go(\'p-detail\')"><div class="img" '+(hasImg?'style="background-image:url('+r[3]+')"':'')+'></div><div class="info"><div class="t">'+r[0]+'</div><div class="d">'+r[1]+'</div><div class="bot"><div class="p mono">'+(typeof r[2]==='number'?'¥'+r[2]+'<small>/月</small>':r[2]||'')+'</div></div></div></div>';
+  }).join(''):'<div class="empty"><span class="ic" data-ic="doc"></span>暂无数据</div>';
+  initIcons();bindSpot(b);
+}
+
+/* ---------- sheet ---------- */
+function openSheet(){document.getElementById('ss').classList.add('open');document.getElementById('sheet').classList.add('open');}
+function closeSheet(){document.getElementById('ss').classList.remove('open');document.getElementById('sheet').classList.remove('open');}
+
+/* ---------- spotlight ---------- */
+function bindSpot(scope){
+  scope.querySelectorAll('.spotlight').forEach(function(el){
+    el.addEventListener('mousemove',function(e){var r=el.getBoundingClientRect();el.style.setProperty('--mx',(e.clientX-r.left)+'px');el.style.setProperty('--my',(e.clientY-r.top)+'px');});
+  });
+}
+
+/* ---------- toast ---------- */
+var toastT;function toast(m){var t=document.createElement('div');t.textContent=m;t.style.cssText='position:absolute;left:50%;bottom:120px;transform:translateX(-50%);background:rgba(26,26,29,.95);border:1px solid var(--line-2);color:#fff;padding:11px 20px;border-radius:12px;font-size:13px;z-index:99;box-shadow:0 14px 30px -14px rgba(0,0,0,.8)';document.querySelector('.screen').appendChild(t);setTimeout(function(){t.style.opacity='0';t.style.transition='.3s';setTimeout(function(){t.remove()},300);},1800);}
+
+/* ---------- init ---------- */
+(function(){var d=document.getElementById('dates');var days=['今天','明天','周三','周四','周五'];d.innerHTML=days.map(function(x,i){return '<span class="opt'+(i===0?' on':'')+'" onclick="toggleOpt(this)">'+x+'</span>'}).join('');})();
+buildHome();buildMsg();renderFeed('default');
+window.addEventListener('load',function(){moveInd();initIcons();});
+initIcons();bindLoginMotion();
+
+/* ---------- mini-program login ---------- */
+function bindLoginMotion(){
+  var l=document.getElementById('login');if(!l)return;
+  var bg=l.querySelector('.login-bg'),glow=l.querySelector('.login-glow');
+  l.addEventListener('mousemove',function(e){
+    var r=l.getBoundingClientRect();
+    var x=(e.clientX-r.left)/r.width-0.5, y=(e.clientY-r.top)/r.height-0.5;
+    if(bg)bg.style.transform='translate('+(-x*16)+'px,'+(-y*16)+'px) scale(1.05)';
+    if(glow){glow.style.left=(e.clientX-r.left)+'px';glow.style.top=(e.clientY-r.top)+'px';}
+  });
+  l.addEventListener('mouseleave',function(){if(bg)bg.style.transform='translate(0,0) scale(1.05)';if(glow){glow.style.left='50%';glow.style.top='34%';}});
+}
+function enterApp(){var l=document.getElementById('login');if(l)l.style.display='none';}
+function agreed(r){return document.getElementById(r+'Agree').checked;}
+function doWxLogin(r){if(!agreed(r)){toast('请先阅读并同意协议');return;}var b=document.getElementById(r+'Wx');b.innerHTML='授权中…';b.style.opacity='.75';setTimeout(function(){enterApp();toast(r==='tenant'?'微信授权成功，已登录':'微信授权成功，房东已登录');},900);}
+function doPwdLogin(r){if(!agreed(r)){toast('请先阅读并同意协议');return;}var u=document.getElementById(r+'User').value.trim();var p=document.getElementById(r+'PwdI').value;if(!u||!p){toast('请输入账号和密码');return;}enterApp();toast(r==='tenant'?'登录成功':'房东登录成功');}
+function showPwd(r){document.getElementById(r+'Auth').style.display='none';document.getElementById(r+'Pwd').style.display='block';}
+function showAuth(r){document.getElementById(r+'Pwd').style.display='none';document.getElementById(r+'Auth').style.display='block';}
+function togglePw(r){var i=document.getElementById(r+'PwdI');var t=document.getElementById(r+'PwToggle');if(i.type==='password'){i.type='text';t.innerHTML=svg('eyeoff',19);}else{i.type='password';t.innerHTML=svg('eye',19);}}
+</script>
+</body>
+</html>
