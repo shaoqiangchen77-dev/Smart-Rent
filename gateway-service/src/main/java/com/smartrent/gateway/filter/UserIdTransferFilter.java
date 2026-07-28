@@ -21,20 +21,25 @@ public class UserIdTransferFilter implements GlobalFilter, Ordered {
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         ServerHttpRequest request = exchange.getRequest();
 
-        // 如果已登录，将userId写入请求头
-        // 注意：Sa-Token 的上下文由 SaReactorFilter 建立；在上下文尚未就绪
-        // （例如白名单放行路径、或鉴权过滤器先于本过滤器执行）时，直接调用
-        // StpUtil 可能抛异常。这里做安全降级，避免影响正常请求转发。
-        try {
-            if (StpUtil.isLogin()) {
-                long userId = StpUtil.getLoginIdAsLong();
-                ServerHttpRequest newRequest = request.mutate()
-                        .header(HEADER_USER_ID, String.valueOf(userId))
-                        .build();
-                return chain.filter(exchange.mutate().request(newRequest).build());
+        // 注意：Sa-Token 的 StpUtil.isLogin()/getLoginIdAsLong() 依赖线程绑定的
+        // Sa-Token 上下文，而 Gateway 运行在 WebFlux 响应式环境下，该上下文在
+        // GlobalFilter 中并不可靠（始终为“未登录”），因此不能用 StpUtil.isLogin()。
+        // 正确做法：直接从 Authorization 头取出裸 token，用 getLoginIdByToken 解析
+        // 登录 ID（纯无状态计算，不依赖上下文），再注入 X-User-Id 给下游服务。
+        String token = request.getHeaders().getFirst("Authorization");
+        if (token != null && !token.isBlank()) {
+            try {
+                Object loginId = StpUtil.getLoginIdByToken(token);
+                if (loginId != null) {
+                    long userId = Long.parseLong(loginId.toString());
+                    ServerHttpRequest newRequest = request.mutate()
+                            .header(HEADER_USER_ID, String.valueOf(userId))
+                            .build();
+                    return chain.filter(exchange.mutate().request(newRequest).build());
+                }
+            } catch (Exception e) {
+                // token 无效或解析失败：不写入用户头，直接透传请求
             }
-        } catch (Exception e) {
-            // 上下文不可用或解析失败：不写入用户头，直接透传请求
         }
 
         return chain.filter(exchange);
@@ -42,6 +47,7 @@ public class UserIdTransferFilter implements GlobalFilter, Ordered {
 
     @Override
     public int getOrder() {
-        return -100; // 在路由转发之前执行
+        // 必须在 SaReactorFilter（order=-100）之后执行
+        return -99;
     }
 }
