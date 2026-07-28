@@ -11,7 +11,7 @@
           {{ nickname }}
           <text class="sm">{{ roleText }} · 实名已认证</text>
         </view>
-        <SrIcon class="edit-ic" name="chev" :size="30" color="#9a9183" />
+        <SrIcon class="edit-ic" name="chev-right" :size="30" color="#9a9183" />
       </view>
       <view class="my-stats">
         <view class="s"><text class="mono stat-num">{{ stats.collect }}</text><text class="sm">收藏</text></view>
@@ -27,7 +27,7 @@
         <view class="mi spotlight" @click="goPage('/pages/landlord/dashboard')">
           <SrIcon class="mi-ic" name="building" :size="40" color="#b08a3a" />
           <text class="mi-text">房东工作台</text>
-          <SrIcon class="mi-arrow" name="chev" :size="34" color="#9a9183" />
+          <SrIcon class="mi-arrow" name="chev-right" :size="34" color="#9a9183" />
         </view>
       </view>
 

@@ -2,7 +2,7 @@
   <view class="message-page">
     <view class="sub-head" :style="{ paddingTop: (statusBar + 6) + 'px' }">
       <view class="back" @click="goBack">
-        <SrIcon name="chev" :size="34" color="#b08a3a" />
+        <SrIcon name="chev-left" :size="34" color="#b08a3a" />
       </view>
       <text class="tt">消息中心</text>
       <text class="read-link" @click="markAllRead">已读</text>

@@ -12,7 +12,7 @@
         <text class="avatar-title">头像</text>
         <text class="avatar-tip">{{ uploading ? '上传中…' : '点击更换头像' }}</text>
       </view>
-      <SrIcon class="avatar-arrow" name="chev" :size="30" color="#9a9183" />
+      <SrIcon class="avatar-arrow" name="chev-right" :size="30" color="#9a9183" />
     </view>
 
     <view class="form-section">
