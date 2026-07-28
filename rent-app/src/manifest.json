@@ -42,7 +42,13 @@
   },
   "quickapp": {},
   "mp-weixin": {
-    "appid": "",
+    "appid": "wxec6135604f9ec519",
+    "permission": {
+      "scope.userLocation": {
+        "desc": "你的位置信息将用于计算房源距离和展示附近配套"
+      }
+    },
+    "requiredPrivateInfos": ["getLocation"],
     "setting": {
       "urlCheck": false,
       "es6": true,
