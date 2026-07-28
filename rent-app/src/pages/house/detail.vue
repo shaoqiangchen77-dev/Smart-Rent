@@ -1,52 +1,75 @@
 <template>
   <view class="detail-page">
+    <AppNavbar :show-back="true" title="房源详情" />
+
     <view v-if="house" class="content">
-      <swiper class="image-swiper" indicator-dots indicator-color="rgba(255,255,255,0.45)" indicator-active-color="#ffffff" autoplay circular>
-        <swiper-item v-for="(img, idx) in house.images" :key="idx">
-          <image :src="img" mode="aspectFill" class="swiper-image" />
-        </swiper-item>
-        <swiper-item v-if="!house.images?.length">
-          <image src="/static/default-house.png" mode="aspectFill" class="swiper-image" />
-        </swiper-item>
-      </swiper>
-      <view class="swiper-overlay"></view>
+      <view class="hero-wrap">
+        <swiper
+          class="image-swiper"
+          indicator-dots
+          indicator-color="rgba(255,255,255,0.45)"
+          indicator-active-color="#ffffff"
+          autoplay
+          circular
+          @change="onSwiperChange"
+        >
+          <swiper-item v-for="(img, idx) in house.images" :key="idx">
+            <image :src="img" mode="aspectFill" class="swiper-image" />
+          </swiper-item>
+          <swiper-item v-if="!house.images?.length">
+            <image src="/static/house/g1.jpg" mode="aspectFill" class="swiper-image" />
+          </swiper-item>
+        </swiper>
+        <view class="swiper-overlay"></view>
+
+        <view class="fav" :class="{ on: collected }" @click="onCollect">
+          <SrIcon name="heart" :size="32" :color="collected ? '#c75d5d' : '#b08a3a'" />
+        </view>
+        <view v-if="house.images?.length" class="chip">{{ current + 1 }} / {{ house.images.length }}</view>
+      </view>
 
       <view class="info-card main-card">
         <view class="title-row">
-          <text class="title">{{ house.title }}</text>
+          <text class="title serif">{{ house.title }}</text>
           <text class="rating">{{ house.avgRating || '4.8' }}分</text>
         </view>
 
-        <view class="price-row">
+        <view class="price-box">
           <view class="price-wrap">
             <text class="price-symbol">¥</text>
-            <text class="price">{{ house.price }}</text>
+            <text class="price mono">{{ house.price }}</text>
             <text class="unit">/月</text>
           </view>
-          <text class="rent-type">{{ house.rentType }}</text>
-        </view>
-
-        <view class="meta-chips">
-          <view class="chip"><text>{{ house.houseType }}</text></view>
-          <view v-if="house.areaSize" class="chip"><text>{{ house.areaSize }}m²</text></view>
-          <view v-if="house.floor" class="chip"><text>{{ house.floor }}</text></view>
-          <view v-if="house.decoration" class="chip"><text>{{ house.decoration }}</text></view>
+          <view class="sc">押一付三<br />含物业</view>
         </view>
 
         <view class="address-line">
+          <SrIcon name="pin" :size="26" color="#b08a3a" />
           <text>{{ house.area }}</text>
           <text v-if="house.subwayDistance">距地铁 {{ house.subwayDistance }}m</text>
         </view>
+
+        <view class="meta-chips">
+          <text v-if="house.houseType" class="gold-pill">{{ house.houseType }}</text>
+          <text v-if="house.areaSize" class="gold-pill">{{ house.areaSize }}m²</text>
+          <text v-if="house.floor" class="gold-pill">{{ house.floor }}</text>
+          <text v-if="house.decoration" class="gold-pill">{{ house.decoration }}</text>
+        </view>
       </view>
 
-      <view class="info-card location-card">
-        <view class="section-head">
-          <view>
-            <text class="section-title">位置与路线</text>
-            <text class="section-subtitle">像店铺导航一样，点“去这里”直接打开微信地图。</text>
+      <view class="info-card">
+        <SecHeader title="户型亮点" />
+        <view class="feat">
+          <view v-for="(f, i) in features" :key="i" class="f">
+            <SrIcon :name="f.icon" :size="34" color="#b08a3a" />
+            <text class="t">{{ f.text }}</text>
           </view>
-          <text class="map-link" @click="openNavigation('map')">地图</text>
         </view>
+      </view>
+
+      <view class="info-card">
+        <SecHeader title="位置与路线" link-text="地图 ›" @link="openNavigation('map')" />
+        <text class="section-subtitle">像店铺导航一样，点“去这里”直接打开微信地图。</text>
 
         <view class="location-info">
           <text class="address">{{ house.address }}</text>
@@ -68,7 +91,7 @@
           <text>该房源暂未配置坐标</text>
         </view>
 
-        <view class="route-card" :class="{ disabled: !hasLocation }" @click="openNavigation('route')">
+        <view class="route-card spotlight" :class="{ disabled: !hasLocation }" @click="openNavigation('route')">
           <view class="route-copy">
             <text class="route-title">去这里</text>
             <text class="route-desc">查看路线、周边和导航</text>
@@ -109,41 +132,56 @@
       </view>
 
       <view v-if="house.tags?.length" class="info-card">
-        <view class="section-head compact">
-          <text class="section-title">房源亮点</text>
-        </view>
+        <SecHeader title="房源亮点" />
         <view class="tags">
           <text v-for="tag in house.tags" :key="tag" class="tag">{{ tag }}</text>
         </view>
       </view>
 
       <view v-if="house.facilities?.length" class="info-card">
-        <view class="section-head compact">
-          <text class="section-title">配套设施</text>
-        </view>
+        <SecHeader title="配套设施" />
         <view class="facilities">
           <text v-for="f in house.facilities" :key="f" class="facility">{{ f }}</text>
         </view>
       </view>
 
       <view v-if="house.description" class="info-card">
-        <view class="section-head compact">
-          <text class="section-title">房源描述</text>
-        </view>
+        <SecHeader title="房源描述" />
         <text class="description">{{ house.description }}</text>
+      </view>
+
+      <view class="info-card">
+        <SecHeader title="房东信息" />
+        <view class="li landlord">
+          <view class="av">
+            <SrIcon name="user" :size="36" color="#2a2113" />
+          </view>
+          <view class="c">
+            <view class="t">房东</view>
+            <view class="s">房源发布者 · 实名认证</view>
+          </view>
+          <view class="rt" @click="contactLandlord">联系 ›</view>
+        </view>
+      </view>
+
+      <view class="info-card">
+        <SecHeader title="AI 智能评估" />
+        <text class="ai-eval">综合地段、租金与配套评估：该房源性价比较好，低于同板块均价约 8%，推荐指数 ★★★★☆，建议预约实地看房进一步核实采光与隔音。</text>
       </view>
 
       <view class="bottom-space"></view>
 
       <view class="bottom-bar">
-        <view class="action-btn" :class="{ collected: collected }" @click="onCollect">
-          <text>{{ collected ? '已收藏' : '收藏' }}</text>
+        <view class="bb-fav" :class="{ collected }" @click="onCollect">
+          <SrIcon name="heart" :size="36" :color="collected ? '#c75d5d' : '#b08a3a'" />
         </view>
-        <view class="action-btn map-action" @click="openNavigation('bottom')">
-          <text>去这里</text>
+        <view class="bb-price">
+          <text class="mono">{{ house.price }}</text>
+          <text class="sm">/月</text>
         </view>
-        <view class="action-btn primary" @click="onAppointment">
-          <text>预约看房</text>
+        <view class="btns">
+          <view class="ghost" @click="goAI">问 AI</view>
+          <view class="gold" @click="onAppointment">预约看房</view>
         </view>
       </view>
     </view>
@@ -155,6 +193,10 @@ import { ref, computed, onMounted } from 'vue'
 import { getHouseDetail, type HouseItem } from '@/api/house'
 import { collect, uncollect } from '@/api/collection'
 import { mockHouses } from '@/utils/mock-data'
+import AppNavbar from '@/components/app-navbar.vue'
+import SrIcon from '@/components/SrIcon.vue'
+import SecHeader from '@/components/SecHeader.vue'
+import { openAi } from '@/composables/useAiChat'
 
 const house = ref<HouseItem | null>(null)
 const collected = ref(false)
@@ -162,6 +204,7 @@ const userLocation = ref<{ latitude: number; longitude: number } | null>(null)
 const distance = ref('')
 const nearbyInfo = ref<Array<{ name: string; distance: string }>>([])
 const hasLocation = computed(() => !!house.value?.longitude && !!house.value?.latitude)
+const current = ref(0)
 
 const markers = computed(() => {
   if (!hasLocation.value || !house.value) return []
@@ -173,6 +216,18 @@ const markers = computed(() => {
     width: 28,
     height: 28,
   }]
+})
+
+const features = computed(() => {
+  const h = house.value
+  if (!h) return []
+  const list: { icon: string; text: string }[] = []
+  if (h.houseType) list.push({ icon: 'home', text: h.houseType })
+  if (h.areaSize) list.push({ icon: 'building', text: h.areaSize + 'm²' })
+  if (h.floor) list.push({ icon: 'pin', text: h.floor })
+  if (h.decoration) list.push({ icon: 'star', text: h.decoration })
+  if (h.subwayDistance) list.push({ icon: 'map', text: '近地铁' })
+  return list
 })
 
 onMounted(async () => {
@@ -236,16 +291,17 @@ function openNavigation(mode: string) {
     return
   }
 
-  uni.openLocation({
-    latitude: house.value.latitude,
-    longitude: house.value.longitude,
-    name: house.value.title,
-    address: house.value.address,
-    scale: 16,
-    success: () => {
-      console.log('open map', mode)
-    },
-  })
+  const params: string[] = [
+    `lat=${house.value.latitude}`,
+    `lng=${house.value.longitude}`,
+    `name=${encodeURIComponent(house.value.title || '')}`,
+    `address=${encodeURIComponent(house.value.address || '')}`,
+  ]
+  if (userLocation.value) {
+    params.push(`fromlat=${userLocation.value.latitude}`)
+    params.push(`fromlng=${userLocation.value.longitude}`)
+  }
+  uni.navigateTo({ url: `/pages/house/navigation?${params.join('&')}` })
 }
 
 async function onCollect() {
@@ -270,33 +326,72 @@ function onAppointment() {
   if (!house.value) return
   uni.navigateTo({ url: `/pages/house/appointment?houseId=${house.value.id}&landlordId=${house.value.landlordId}` })
 }
+
+function goAI() {
+  openAi()
+}
+
+function contactLandlord() {
+  uni.switchTab({ url: '/pages/message/list' })
+}
+
+function onSwiperChange(e: any) {
+  current.value = e.detail.current
+}
 </script>
 
 <style scoped>
 .detail-page {
   min-height: 100vh;
-  background: #f6f4ef;
+  background: var(--bg);
 }
 
-.image-swiper {
+.hero-wrap {
+  position: relative;
   width: 100%;
   height: 520rpx;
 }
-
+.image-swiper {
+  width: 100%;
+  height: 100%;
+}
 .swiper-image {
   width: 100%;
   height: 100%;
 }
-
 .swiper-overlay {
   position: absolute;
-  top: 390rpx;
   left: 0;
   right: 0;
-  height: 140rpx;
-  background: linear-gradient(180deg, rgba(246, 244, 239, 0), #f6f4ef);
+  bottom: 0;
+  height: 160rpx;
+  background: linear-gradient(180deg, rgba(246, 244, 239, 0), var(--bg));
   z-index: 1;
   pointer-events: none;
+}
+.fav {
+  position: absolute;
+  top: 28rpx;
+  right: 24rpx;
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  background: rgba(255, 253, 248, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+}
+.chip {
+  position: absolute;
+  bottom: 28rpx;
+  right: 24rpx;
+  background: rgba(255, 253, 248, 0.85);
+  color: var(--txt);
+  font-size: 22rpx;
+  padding: 8rpx 18rpx;
+  border-radius: 12rpx;
+  z-index: 3;
 }
 
 .info-card {
@@ -305,13 +400,19 @@ function onAppointment() {
   margin: 18rpx 24rpx;
   padding: 28rpx;
   border-radius: 18rpx;
-  background: #fff;
-  border: 1rpx solid #e7e1d6;
-  box-shadow: 0 10rpx 26rpx rgba(31, 42, 39, 0.04);
+  background: var(--glass);
+  border: 1rpx solid var(--line);
+  box-shadow: var(--shadow);
 }
-
 .main-card {
   margin-top: -54rpx;
+}
+.section-subtitle {
+  display: block;
+  margin: -6rpx 0 18rpx;
+  color: var(--txt-3);
+  font-size: 22rpx;
+  line-height: 1.45;
 }
 
 .title-row {
@@ -319,65 +420,71 @@ function onAppointment() {
   gap: 16rpx;
   align-items: flex-start;
 }
-
 .title {
   flex: 1;
   color: #1c1812;
   font-size: 38rpx;
   line-height: 1.35;
-  font-weight: 900;
-  letter-spacing: 0;
+  font-weight: 800;
 }
-
 .rating {
   padding: 8rpx 12rpx;
   border-radius: 999rpx;
-  background: #fff4df;
-  color: #b0791f;
+  background: #f4ecd6;
+  color: var(--gold-2);
   font-size: 22rpx;
-  font-weight: 900;
+  font-weight: 800;
   white-space: nowrap;
 }
 
-.price-row {
+.price-box {
   display: flex;
+  align-items: baseline;
   justify-content: space-between;
-  align-items: center;
-  margin-top: 18rpx;
+  background: var(--glass-solid);
+  border: 1rpx solid var(--line);
+  border-radius: 16rpx;
+  padding: 22rpx;
+  margin: 18rpx 0;
+  box-shadow: var(--shadow);
 }
-
 .price-wrap {
   display: flex;
   align-items: baseline;
 }
-
 .price-symbol {
   margin-right: 2rpx;
-  color: #b0791f;
+  color: var(--gold-2);
   font-size: 26rpx;
-  font-weight: 900;
+  font-weight: 800;
 }
-
 .price {
-  color: #b0791f;
+  color: var(--gold-2);
   font-size: 50rpx;
-  font-weight: 900;
+  font-weight: 800;
 }
-
 .unit {
   margin-left: 4rpx;
-  color: #8b918e;
+  color: var(--txt-3);
   font-size: 24rpx;
 }
+.sc {
+  font-size: 22rpx;
+  color: var(--txt-2);
+  text-align: right;
+  line-height: 1.5;
+}
 
-.rent-type {
-  padding: 8rpx 18rpx;
-  border-radius: 999rpx;
-  background: #f4ecd6;
-  color: #b08a3a;
-  border: 1rpx solid #e4d2a8;
-  font-size: 23rpx;
-  font-weight: 800;
+.address-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10rpx;
+  color: var(--txt-2);
+  font-size: 24rpx;
+}
+.address-line .gap {
+  margin: 0 4rpx;
 }
 
 .meta-chips {
@@ -386,64 +493,29 @@ function onAppointment() {
   gap: 10rpx;
   margin-top: 18rpx;
 }
-
-.chip {
-  padding: 9rpx 16rpx;
-  border-radius: 10rpx;
-  background: #f5f1e9;
-  color: #5d665f;
-  font-size: 23rpx;
-  font-weight: 700;
-}
-
-.address-line {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 18rpx;
-  margin-top: 18rpx;
-  color: #69736f;
-  font-size: 24rpx;
-}
-
-.section-head {
-  display: flex;
-  justify-content: space-between;
-  gap: 16rpx;
-  align-items: flex-start;
-  margin-bottom: 18rpx;
-}
-
-.section-head.compact {
-  margin-bottom: 16rpx;
-}
-
-.section-title,
-.section-subtitle {
-  display: block;
-}
-
-.section-title {
-  color: #1c1812;
-  font-size: 31rpx;
-  line-height: 1.35;
-  font-weight: 900;
-  letter-spacing: 0;
-}
-
-.section-subtitle {
-  margin-top: 6rpx;
-  color: #8a928e;
+.meta-chips .gold-pill {
   font-size: 22rpx;
-  line-height: 1.45;
 }
 
-.map-link {
-  padding: 8rpx 16rpx;
-  border-radius: 999rpx;
-  background: #edf7f3;
-  color: #b08a3a;
-  font-size: 23rpx;
-  font-weight: 900;
+/* 户型亮点 feat 网格 */
+.feat {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14rpx;
+}
+.feat .f {
+  background: var(--glass-solid);
+  border: 1rpx solid var(--line);
+  border-radius: 16rpx;
+  padding: 22rpx 10rpx;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+.feat .f .t {
+  display: block;
+  font-size: 22rpx;
+  color: var(--txt-2);
+  margin-top: 12rpx;
 }
 
 .location-info {
@@ -452,24 +524,21 @@ function onAppointment() {
   gap: 14rpx;
   margin-bottom: 16rpx;
 }
-
 .address {
   flex: 1;
-  color: #5b6662;
+  color: var(--txt-2);
   font-size: 25rpx;
   line-height: 1.5;
 }
-
 .distance-badge {
   padding: 7rpx 14rpx;
   border-radius: 999rpx;
-  background: #fff4df;
-  color: #b0791f;
+  background: #f4ecd6;
+  color: var(--gold-2);
   font-size: 21rpx;
-  font-weight: 900;
+  font-weight: 800;
   white-space: nowrap;
 }
-
 .house-map,
 .map-placeholder {
   width: 100%;
@@ -478,16 +547,14 @@ function onAppointment() {
   overflow: hidden;
   margin-bottom: 16rpx;
 }
-
 .map-placeholder {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #edf1ef;
-  color: #7b8582;
+  background: var(--bg-2);
+  color: var(--txt-3);
   font-size: 24rpx;
 }
-
 .route-card {
   display: flex;
   align-items: center;
@@ -496,35 +563,29 @@ function onAppointment() {
   margin-bottom: 14rpx;
   padding: 22rpx;
   border-radius: 18rpx;
-  background: #8a6a24;
-  box-shadow: 0 12rpx 26rpx rgba(20, 59, 52, 0.15);
+  background: var(--grad);
+  box-shadow: 0 12rpx 26rpx rgba(176, 138, 58, 0.22);
 }
-
 .route-card.disabled {
   opacity: 0.55;
 }
-
 .route-copy {
   flex: 1;
 }
-
 .route-title,
 .route-desc {
   display: block;
 }
-
 .route-title {
   color: #fff;
   font-size: 31rpx;
-  font-weight: 900;
+  font-weight: 800;
 }
-
 .route-desc {
   margin-top: 6rpx;
   color: rgba(255, 255, 255, 0.72);
   font-size: 22rpx;
 }
-
 .route-action {
   width: 92rpx;
   height: 56rpx;
@@ -534,88 +595,76 @@ function onAppointment() {
   background: #f3c36b;
   color: #1c1812;
   font-size: 23rpx;
-  font-weight: 900;
+  font-weight: 800;
 }
-
 .route-modes {
   display: flex;
   gap: 12rpx;
   margin-bottom: 18rpx;
 }
-
 .route-modes text {
   flex: 1;
   height: 58rpx;
   line-height: 58rpx;
   text-align: center;
   border-radius: 999rpx;
-  background: #f8f6f1;
-  color: #5d665f;
-  border: 1rpx solid #ede7dc;
+  background: var(--bg-2);
+  color: var(--txt-2);
+  border: 1rpx solid var(--line);
   font-size: 23rpx;
-  font-weight: 800;
+  font-weight: 700;
 }
-
 .commute-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 12rpx;
   margin-bottom: 16rpx;
 }
-
 .commute-item {
   padding: 16rpx 10rpx;
   border-radius: 15rpx;
-  background: #f8f6f1;
+  background: var(--bg-2);
 }
-
 .commute-value,
 .commute-label {
   display: block;
   text-align: center;
 }
-
 .commute-value {
   color: #1c1812;
   font-size: 24rpx;
-  font-weight: 900;
+  font-weight: 800;
 }
-
 .commute-label {
   margin-top: 6rpx;
-  color: #7b8582;
+  color: var(--txt-3);
   font-size: 20rpx;
 }
-
 .nearby-info {
   padding: 20rpx;
   border-radius: 16rpx;
-  background: #fbfaf7;
-  border: 1rpx solid #ede7dc;
+  background: var(--glass-solid);
+  border: 1rpx solid var(--line);
 }
-
 .nearby-title {
   display: block;
   margin-bottom: 10rpx;
   color: #1c1812;
   font-size: 25rpx;
-  font-weight: 900;
+  font-weight: 800;
 }
-
 .nearby-item {
   display: flex;
   justify-content: space-between;
   padding: 9rpx 0;
   font-size: 23rpx;
 }
-
 .nearby-name {
-  color: #65706b;
+  color: var(--txt-2);
 }
-
 .nearby-dist {
-  color: #b08a3a;
-  font-weight: 900;
+  color: var(--gold-2);
+  font-weight: 800;
 }
 
 .tags,
@@ -624,7 +673,6 @@ function onAppointment() {
   flex-wrap: wrap;
   gap: 12rpx;
 }
-
 .tag,
 .facility {
   padding: 9rpx 18rpx;
@@ -632,29 +680,67 @@ function onAppointment() {
   font-size: 23rpx;
   font-weight: 800;
 }
-
 .tag {
   background: #f4ecd6;
-  color: #b08a3a;
+  color: var(--gold-2);
   border: 1rpx solid #e4d2a8;
 }
-
 .facility {
-  background: #f5f1e9;
-  color: #5d665f;
+  background: var(--bg-2);
+  color: var(--txt-2);
 }
-
 .description {
   display: block;
-  color: #5d665f;
+  color: var(--txt-2);
   font-size: 27rpx;
   line-height: 1.75;
+}
+
+/* 房东信息 .li */
+.li.landlord {
+  padding: 22rpx 24rpx;
+}
+.li.landlord .av {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 24rpx;
+  background: var(--grad);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 80rpx;
+}
+.li.landlord .c {
+  flex: 1;
+  min-width: 0;
+}
+.li.landlord .c .t {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--txt);
+}
+.li.landlord .c .s {
+  font-size: 22rpx;
+  color: var(--txt-3);
+  margin-top: 6rpx;
+}
+.li.landlord .rt {
+  color: var(--gold-2);
+  font-size: 26rpx;
+  font-weight: 700;
+  flex: 0 0 auto;
+}
+
+.ai-eval {
+  display: block;
+  color: var(--gold-2);
+  font-size: 25rpx;
+  line-height: 1.7;
 }
 
 .bottom-space {
   height: 170rpx;
 }
-
 .bottom-bar {
   position: fixed;
   left: 0;
@@ -662,46 +748,71 @@ function onAppointment() {
   bottom: 0;
   z-index: 100;
   display: flex;
+  align-items: center;
   gap: 14rpx;
   padding: 18rpx 24rpx;
   padding-bottom: calc(18rpx + env(safe-area-inset-bottom));
-  background: rgba(255, 255, 255, 0.94);
-  border-top: 1rpx solid #e7e1d6;
-  box-shadow: 0 -10rpx 28rpx rgba(31, 42, 39, 0.08);
+  background: var(--glass-solid);
+  border-top: 1rpx solid var(--line);
+  box-shadow: 0 -10rpx 28rpx rgba(60, 45, 20, 0.08);
 }
-
-.action-btn {
-  min-width: 124rpx;
+.bb-fav {
+  width: 78rpx;
+  height: 78rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16rpx;
+  background: var(--glass);
+  border: 1rpx solid var(--line);
+  flex: 0 0 auto;
+}
+.bb-fav.collected {
+  background: #fff1f1;
+  border-color: #f0c9c9;
+}
+.bb-price {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: baseline;
+  color: var(--gold-2);
+  font-size: 36rpx;
+  font-weight: 800;
+}
+.bb-price .sm {
+  font-size: 20rpx;
+  color: var(--txt-3);
+  font-weight: 400;
+  margin-left: 2rpx;
+}
+.btns {
+  flex: 1;
+  display: flex;
+  gap: 12rpx;
+}
+.btns .ghost,
+.btns .gold {
+  flex: 1;
   height: 78rpx;
   line-height: 78rpx;
   text-align: center;
   border-radius: 16rpx;
-  background: #f5f1e9;
-  color: #5d665f;
-  font-size: 26rpx;
-  font-weight: 900;
+  font-size: 27rpx;
+  font-weight: 800;
 }
-
-.action-btn.collected {
-  background: #fff1f1;
-  color: #c24141;
+.btns .ghost {
+  background: var(--glass);
+  border: 1rpx solid var(--line);
+  color: var(--txt);
 }
-
-.map-action {
-  background: #f4ecd6;
-  color: #b08a3a;
+.btns .gold {
+  background: var(--grad);
+  color: #2a2113;
+  box-shadow: 0 12rpx 24rpx rgba(176, 138, 58, 0.2);
 }
-
-.action-btn.primary {
-  flex: 1;
-  background: #b08a3a;
-  color: #fff;
-  box-shadow: 0 12rpx 24rpx rgba(176,138,58, 0.2);
-}
-
-.action-btn:active,
-.route-card:active,
-.route-modes text:active {
+.bb-fav:active,
+.btns .ghost:active,
+.btns .gold:active {
   transform: scale(0.98);
 }
 </style>
