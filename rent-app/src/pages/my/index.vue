@@ -1,93 +1,82 @@
 <template>
   <view class="my-page">
-    <!-- 用户头部 -->
-    <view class="header">
-      <view class="header-bg"></view>
-      <view class="header-circles">
-        <view class="circle c1"></view>
-        <view class="circle c2"></view>
+    <!-- 头部：渐变 + 头像 + 昵称 + 数据 -->
+    <view class="my-head" :style="{ paddingTop: (statusBar + 16) + 'px' }">
+      <view class="u" @click="goEdit">
+        <view class="av avatar-grad">
+          <image v-if="avatarSrc && showAvatarImg" :key="avatarKey" :src="avatarSrc" class="av-img" mode="aspectFill" @error="showAvatarImg = false" />
+          <text v-else>{{ initial }}</text>
+        </view>
+        <view class="nm">
+          {{ nickname }}
+          <text class="sm">{{ roleText }} · 实名已认证</text>
+        </view>
+        <SrIcon class="edit-ic" name="chev" :size="30" color="#9a9183" />
       </view>
-      <view v-if="userStore.isLoggedIn" class="user-card" @click="goPage('/pages/my/preference')">
-        <view class="avatar-wrap">
-          <image class="avatar" :src="userStore.userInfo?.avatar || '/static/default-avatar.png'" />
-          <view class="avatar-ring"></view>
-        </view>
-        <view class="user-info">
-          <text class="nickname">{{ userStore.userInfo?.nickname || userStore.userInfo?.username }}</text>
-          <view class="role-badge">
-            <text>{{ userStore.userInfo?.role === 1 ? '房东' : '租客' }}</text>
-          </view>
-        </view>
-        <text class="edit-arrow">></text>
-      </view>
-      <view v-else class="user-card" @click="goLogin">
-        <view class="avatar-wrap">
-          <image class="avatar" src="/static/default-avatar.png" />
-          <view class="avatar-ring"></view>
-        </view>
-        <text class="login-hint">点击登录</text>
+      <view class="my-stats">
+        <view class="s"><text class="mono stat-num">{{ stats.collect }}</text><text class="sm">收藏</text></view>
+        <view class="s"><text class="mono stat-num">{{ stats.browse }}</text><text class="sm">浏览</text></view>
+        <view class="s"><text class="mono stat-num">{{ stats.appoint }}</text><text class="sm">预约</text></view>
+        <view class="s"><text class="mono stat-num">{{ stats.contract }}</text><text class="sm">合同</text></view>
       </view>
     </view>
 
     <!-- 功能菜单 -->
     <view class="menu-section">
-      <view class="menu-list">
-        <view v-if="userStore.isLandlord" class="menu-item landlord-entry" @click="goPage('/pages/landlord/dashboard')">
-          <view class="menu-icon-wrap icon-landlord">
-            <text class="menu-icon">住</text>
-          </view>
-          <view class="menu-copy">
-            <text class="menu-text">房东工作台</text>
-            <text class="menu-desc">房源、预约、带看进度</text>
-          </view>
-          <text class="menu-arrow">></text>
-        </view>
-        <view class="menu-item" @click="goPage('/pages/my/collection')">
-          <view class="menu-icon-wrap icon-red">
-            <text class="menu-icon">藏</text>
-          </view>
-          <text class="menu-text">我的收藏</text>
-          <text class="menu-arrow">></text>
-        </view>
-        <view class="menu-item" @click="goPage('/pages/my/history')">
-          <view class="menu-icon-wrap icon-blue">
-            <text class="menu-icon">看</text>
-          </view>
-          <text class="menu-text">浏览记录</text>
-          <text class="menu-arrow">></text>
-        </view>
-        <view class="menu-item" @click="goPage('/pages/my/contract')">
-          <view class="menu-icon-wrap icon-green">
-            <text class="menu-icon">约</text>
-          </view>
-          <text class="menu-text">我的合同</text>
-          <text class="menu-arrow">></text>
-        </view>
-        <view class="menu-item" @click="goPage('/pages/my/bill')">
-          <view class="menu-icon-wrap icon-orange">
-            <text class="menu-icon">账</text>
-          </view>
-          <text class="menu-text">我的账单</text>
-          <text class="menu-arrow">></text>
+      <view v-if="userStore.isLandlord" class="menu-list">
+        <view class="mi spotlight" @click="goPage('/pages/landlord/dashboard')">
+          <SrIcon class="mi-ic" name="building" :size="40" color="#b08a3a" />
+          <text class="mi-text">房东工作台</text>
+          <SrIcon class="mi-arrow" name="chev" :size="34" color="#9a9183" />
         </view>
       </view>
 
       <view class="menu-list">
-        <view class="menu-item" @click="goPage('/pages/my/preference')">
-          <view class="menu-icon-wrap icon-purple">
-            <text class="menu-icon">偏</text>
-          </view>
-          <text class="menu-text">偏好设置</text>
-          <text class="menu-arrow">></text>
+        <view class="mi spotlight" @click="goPage('/pages/my/collection')">
+          <SrIcon class="mi-ic" name="heart" :size="40" color="#b08a3a" />
+          <text class="mi-text">我的收藏</text>
+          <text class="mi-rt">{{ stats.collect }} ›</text>
+        </view>
+        <view class="mi spotlight" @click="goPage('/pages/my/history')">
+          <SrIcon class="mi-ic" name="cal" :size="40" color="#b08a3a" />
+          <text class="mi-text">浏览历史</text>
+          <text class="mi-rt">{{ stats.browse }} ›</text>
+        </view>
+        <view class="mi spotlight" @click="goPage('/pages/landlord/appointments')">
+          <SrIcon class="mi-ic" name="appt" :size="40" color="#b08a3a" />
+          <text class="mi-text">我的预约</text>
+          <text class="mi-rt">{{ stats.appoint }} ›</text>
+        </view>
+      </view>
+
+      <view class="menu-list">
+        <view class="mi spotlight" @click="goPage('/pages/my/contract')">
+          <SrIcon class="mi-ic" name="doc" :size="40" color="#b08a3a" />
+          <text class="mi-text">我的合同</text>
+          <text class="mi-rt">{{ stats.contract }} ›</text>
+        </view>
+        <view class="mi spotlight" @click="goPage('/pages/my/bill')">
+          <SrIcon class="mi-ic" name="bill" :size="40" color="#b08a3a" />
+          <text class="mi-text">账单中心</text>
+          <text class="mi-rt">›</text>
+        </view>
+        <view class="mi spotlight" @click="goPage('/pages/my/preference')">
+          <SrIcon class="mi-ic" name="gear" :size="40" color="#b08a3a" />
+          <text class="mi-text">租房偏好</text>
+          <text class="mi-rt">›</text>
         </view>
       </view>
 
       <view v-if="userStore.isLoggedIn" class="menu-list">
-        <view class="menu-item logout" @click="onLogout">
-          <view class="menu-icon-wrap icon-gray">
-            <text class="menu-icon">退</text>
-          </view>
-          <text class="menu-text logout-text">退出登录</text>
+        <view class="mi spotlight logout" @click="onLogout">
+          <SrIcon class="mi-ic" name="user" :size="40" color="#c75d5d" />
+          <text class="mi-text logout-text">退出登录</text>
+        </view>
+      </view>
+      <view v-else class="menu-list">
+        <view class="mi spotlight" @click="goLogin">
+          <SrIcon class="mi-ic" name="user" :size="40" color="#b08a3a" />
+          <text class="mi-text">点击登录</text>
         </view>
       </view>
     </view>
@@ -95,22 +84,62 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, computed, ref } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import { useUserStore } from '@/store/user'
+import SrIcon from '@/components/SrIcon.vue'
+import { useLoginGuard } from '@/composables/authGuard'
 
+useLoginGuard()
+
+const statusBar = uni.getSystemInfoSync().statusBarHeight || 20
 const userStore = useUserStore()
+const defaultAvatar = '/static/default-avatar.png'
 
-onMounted(() => {
-  if (userStore.isLoggedIn) userStore.fetchUserInfo()
+// 原型演示数据（毕业设计 UI 对齐用）
+const stats = { collect: 6, browse: 23, appoint: 2, contract: 1 }
+
+const nickname = computed(() => userStore.userInfo?.nickname || userStore.userInfo?.username || '租客')
+const initial = computed(() => (nickname.value || '客').slice(0, 1))
+const roleText = computed(() => (userStore.userInfo?.role === 1 ? '房东' : '租客'))
+const avatarSrc = computed(() => {
+  const a = userStore.userInfo?.avatar
+  return a && a !== '' ? a : ''
 })
 
-function goLogin() { uni.navigateTo({ url: '/pages/login/login' }) }
+// 控制头像显示：加载失败时回退到文字 initial
+const showAvatarImg = ref(true)
+// 每次显示页面强制刷新 <image>，跳过微信图片缓存（之前 403 可能被缓存）
+const avatarKey = ref(Date.now())
 
-function goPage(url: string) {
-  if (!userStore.isLoggedIn) { goLogin(); return }
-  uni.navigateTo({ url })
+async function refreshUser() {
+  avatarKey.value = Date.now()
+  showAvatarImg.value = true
+  if (userStore.isLoggedIn) {
+    await userStore.fetchUserInfo()
+  }
 }
 
+onMounted(refreshUser)
+onShow(refreshUser)
+
+function goLogin() {
+  uni.navigateTo({ url: '/pages/login/login' })
+}
+function goPage(url: string) {
+  if (!userStore.isLoggedIn) {
+    goLogin()
+    return
+  }
+  uni.navigateTo({ url })
+}
+function goEdit() {
+  if (!userStore.isLoggedIn) {
+    goLogin()
+    return
+  }
+  uni.navigateTo({ url: '/pages/user/edit' })
+}
 function onLogout() {
   userStore.logout()
   uni.showToast({ title: '已退出登录', icon: 'success' })
@@ -120,153 +149,116 @@ function onLogout() {
 <style scoped>
 .my-page {
   min-height: 100vh;
-  background: #f6f4ef;
+  background: var(--bg);
+  padding-bottom: 40rpx;
 }
-.header {
-  position: relative;
-  padding: 0 30rpx 30rpx;
+.my-head {
+  background: radial-gradient(120% 90% at 82% 0%, #f1e7cd, transparent 60%),
+    linear-gradient(160deg, #fbf7ee, #f1e9d8);
+  padding: 40rpx 30rpx;
 }
-.header-bg {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 320rpx;
-  background: #1c1812;
-  border-radius: 0 0 34rpx 34rpx;
-}
-.user-card {
-  position: relative;
-  z-index: 1;
+.my-head .u {
   display: flex;
   align-items: center;
-  background: #fff;
-  border-radius: 16rpx;
-  padding: 36rpx 28rpx;
-  margin-top: 30rpx;
-  box-shadow: 0 16rpx 36rpx rgba(28,24,18,0.12);
-  border: 1rpx solid #e7e1d6;
+  gap: 26rpx;
 }
-.avatar-wrap {
-  position: relative;
-  margin-right: 24rpx;
+.av {
+  width: 112rpx;
+  height: 112rpx;
+  border-radius: 34rpx;
 }
-.avatar {
-  width: 110rpx;
-  height: 110rpx;
-  border-radius: 50%;
-  position: relative;
-  z-index: 1;
+.av-img {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
 }
-.avatar-ring {
-  position: absolute;
-  top: -6rpx;
-  left: -6rpx;
-  right: -6rpx;
-  bottom: -6rpx;
-  border-radius: 50%;
-  background: #b08a3a;
-  z-index: 0;
-}
-.user-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-.nickname {
-  font-size: 34rpx;
+.my-head .nm {
+  font-size: 36rpx;
   font-weight: 700;
-  color: #1c1812;
-  margin-bottom: 8rpx;
-  letter-spacing: 1rpx;
+  color: var(--txt);
 }
-.role-badge {
-  display: inline-block;
-  padding: 6rpx 16rpx;
-  background: #f4ecd6;
-  color: #b08a3a;
+.edit-ic {
+  flex: 0 0 auto;
+  transform: rotate(180deg);
+  margin-left: 4rpx;
+  opacity: 0.75;
+}
+.my-head .nm .sm {
+  display: block;
+  color: var(--txt-3);
+  font-size: 24rpx;
+  margin-top: 8rpx;
+  font-weight: 400;
+}
+.my-stats {
+  display: flex;
+  margin-top: 40rpx;
+  background: var(--glass);
+  border: 1rpx solid var(--line);
+  border-radius: 28rpx;
+  overflow: hidden;
+}
+.my-stats .s {
+  flex: 1;
+  text-align: center;
+  padding: 26rpx 0;
+}
+.my-stats .s + .s {
+  border-left: 1rpx solid var(--line);
+}
+.my-stats .s .stat-num {
+  font-size: 36rpx;
+  display: block;
+  color: var(--txt);
+  font-weight: 800;
+}
+.my-stats .s .sm {
   font-size: 22rpx;
-  border-radius: 12rpx;
-  border: 1rpx solid #c5ded9;
+  color: var(--txt-3);
 }
-.edit-arrow {
-  color: #ccc;
-  font-size: 28rpx;
-}
-.login-hint {
-  font-size: 32rpx;
-  color: #666;
-  font-weight: 500;
-}
+
 .menu-section {
-  padding: 0 30rpx;
-  margin-top: 20rpx;
+  padding: 28rpx 30rpx 0;
 }
 .menu-list {
-  background: #fff;
-  border-radius: 16rpx;
-  margin-bottom: 20rpx;
+  background: var(--glass);
+  border: 1rpx solid var(--line);
+  border-radius: 32rpx;
+  margin-bottom: 24rpx;
   overflow: hidden;
-  border: 1rpx solid #e7e1d6;
-  box-shadow: none;
+  box-shadow: var(--shadow);
 }
-.menu-item {
+.mi {
   display: flex;
   align-items: center;
-  padding: 28rpx 24rpx;
-  border-bottom: 1rpx solid #f5f5f5;
-  transition: background 0.2s ease;
+  gap: 24rpx;
+  padding: 30rpx 28rpx;
+  border-bottom: 1rpx solid var(--line);
 }
-.menu-item:active {
-  background: #f8f9fa;
-}
-.menu-item:last-child {
+.mi:last-child {
   border-bottom: none;
 }
-.menu-icon-wrap {
-  width: 56rpx;
-  height: 56rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 12rpx;
-  margin-right: 20rpx;
+.mi:active {
+  background: var(--glass-2);
 }
-.icon-red { background: #fff2e6; color: #c2410c; }
-.icon-blue { background: #e7f0f7; color: #315c8a; }
-.icon-green { background: #f4ecd6; color: #b08a3a; }
-.icon-orange { background: #f5eddd; color: #8a6b38; }
-.icon-purple { background: #eee9df; color: #5d5147; }
-.icon-gray { background: #eeeeea; color: #6f7d79; }
-.icon-landlord { background: #1c1812; color: #fff; }
-.menu-icon {
-  font-size: 24rpx;
-  font-weight: 750;
+.mi-ic {
+  flex: 0 0 auto;
 }
-.menu-text {
+.mi-text {
   flex: 1;
   font-size: 28rpx;
-  color: #333;
+  color: var(--txt);
   font-weight: 500;
 }
-.menu-copy {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
+.mi-rt {
+  color: var(--txt-3);
+  font-size: 26rpx;
 }
-.menu-desc {
-  margin-top: 6rpx;
-  color: #7b8582;
-  font-size: 22rpx;
-}
-.landlord-entry {
-  background: #fbfaf7;
-}
-.menu-arrow {
-  color: #ccc;
-  font-size: 24rpx;
+.mi-arrow {
+  flex: 0 0 auto;
+  transform: rotate(180deg);
 }
 .logout-text {
-  color: #ff4d4f;
+  color: #c75d5d;
 }
 </style>

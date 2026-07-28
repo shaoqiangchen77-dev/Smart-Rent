@@ -1,14 +1,11 @@
 <template>
   <view class="message-page">
-    <view class="top">
-      <view>
-        <text class="eyebrow">通知收件箱</text>
-        <text class="title">消息中心</text>
+    <view class="sub-head" :style="{ paddingTop: (statusBar + 6) + 'px' }">
+      <view class="back" @click="goBack">
+        <SrIcon name="chev" :size="34" color="#b08a3a" />
       </view>
-      <view class="unread-pill">
-        <text>{{ unreadCount }}</text>
-        <text>未读</text>
-      </view>
+      <text class="tt">消息中心</text>
+      <text class="read-link" @click="markAllRead">已读</text>
     </view>
 
     <view class="tabs">
@@ -27,23 +24,19 @@
       <view
         v-for="msg in filteredMessages"
         :key="msg.id"
-        class="message-card"
+        class="li"
         :class="{ unread: !msg.isRead }"
+        @click="onMsgClick(msg)"
       >
-        <view class="type-mark" :class="msg.msgType">
-          <text>{{ typeShort[msg.msgType] || '通' }}</text>
+        <view class="av soft">
+          <SrIcon :name="iconFor(msg.msgType)" :size="34" color="#b08a3a" />
         </view>
-        <view class="message-body">
-          <view class="message-head">
-            <text class="msg-title">{{ msg.title || typeMap[msg.msgType] || '消息通知' }}</text>
-            <text class="msg-time">{{ msg.createTime }}</text>
-          </view>
-          <text class="msg-content">{{ msg.content }}</text>
-          <view class="msg-foot">
-            <text>{{ typeMap[msg.msgType] || msg.msgType }}</text>
-            <text v-if="!msg.isRead" class="dot-text">新消息</text>
-          </view>
+        <view class="c">
+          <view class="t">{{ msg.title || typeMap[msg.msgType] || '消息通知' }}</view>
+          <view class="s">{{ msg.content }}</view>
         </view>
+        <view class="rt">{{ msg.createTime }}</view>
+        <text v-if="!msg.isRead" class="badge">未读</text>
       </view>
 
       <view v-if="filteredMessages.length === 0" class="empty">
@@ -57,8 +50,14 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { get } from '@/utils/request'
+import { get, post } from '@/utils/request'
 import { mockMessages } from '@/utils/mock-data'
+import SrIcon from '@/components/SrIcon.vue'
+import { useLoginGuard } from '@/composables/authGuard'
+
+useLoginGuard()
+
+const statusBar = uni.getSystemInfoSync().statusBarHeight || 20
 
 interface Message {
   id: number
@@ -92,12 +91,65 @@ const typeShort: Record<string, string> = {
   bill: '账',
 }
 
+// 消息类型对应的业务页面；无对应页面则弹窗展示详情
+const routeMap: Record<string, string> = {
+  appointment: '/pages/landlord/appointments',
+  bill: '/pages/my/bill',
+  contract: '/pages/my/contract',
+}
+
+function iconFor(type: string): string {
+  const map: Record<string, string> = {
+    system: 'gear',
+    appointment: 'appt',
+    contract: 'doc',
+    bill: 'bill',
+  }
+  return map[type] || 'msg'
+}
+
 const filteredMessages = computed(() => {
   if (currentType.value === 'all') return messages.value
   return messages.value.filter((msg) => msg.msgType === currentType.value)
 })
 
 const unreadCount = computed(() => messages.value.filter((msg) => !msg.isRead).length)
+
+async function markAllRead() {
+  try {
+    await post('/message/read-all')
+    messages.value.forEach((m) => { m.isRead = 1 })
+  } catch {
+    // 失败仍做本地降级，保证 UI 反馈
+    messages.value.forEach((m) => { m.isRead = 1 })
+  }
+}
+
+async function onMsgClick(msg: Message) {
+  if (!msg.isRead) {
+    try {
+      await post(`/message/read/${msg.id}`)
+      msg.isRead = 1
+    } catch {
+      // 后端失败仍本地标记已读，避免阻塞交互
+      msg.isRead = 1
+    }
+  }
+  const url = routeMap[msg.msgType]
+  if (url) {
+    uni.navigateTo({ url })
+  } else {
+    uni.showModal({
+      title: msg.title || typeMap[msg.msgType] || '消息通知',
+      content: msg.content,
+      showCancel: false,
+    })
+  }
+}
+
+function goBack() {
+  uni.switchTab({ url: '/pages/index/index' })
+}
 
 onMounted(async () => {
   try {
@@ -112,149 +164,130 @@ onMounted(async () => {
 <style scoped>
 .message-page {
   min-height: 100vh;
-  padding: 28rpx 24rpx 120rpx;
-  background: #f6f4ef;
+  padding-bottom: 120rpx;
+  background: var(--bg);
 }
-.top {
+
+/* 子页头部（对齐原型 .sub-head） */
+.sub-head {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  height: 92rpx;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 28rpx;
-  background: #1c1812;
-  border-radius: 20rpx;
+  gap: 6rpx;
+  padding: 0 20rpx;
+  background: var(--glass-solid);
+  border-bottom: 1rpx solid var(--line);
 }
-.eyebrow,
-.title {
-  display: block;
-}
-.eyebrow {
-  color: #cdbb91;
-  font-size: 24rpx;
-  font-weight: 700;
-}
-.title {
-  margin-top: 8rpx;
-  color: #fffaf0;
-  font-size: 42rpx;
-  font-weight: 820;
-}
-.unread-pill {
-  min-width: 112rpx;
-  height: 112rpx;
+.sub-head .back {
+  width: 56rpx;
+  height: 56rpx;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  border-radius: 18rpx;
-  background: rgba(255,255,255,0.1);
-  color: #fffaf0;
+  transform: rotate(180deg);
 }
-.unread-pill text:first-child {
-  font-size: 36rpx;
-  font-weight: 820;
+.sub-head .tt {
+  flex: 1;
+  text-align: center;
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #1c1812;
 }
-.unread-pill text:last-child {
-  margin-top: 2rpx;
-  font-size: 22rpx;
-  color: #e8dcc0;
+.sub-head .read-link {
+  color: var(--gold-2);
+  font-size: 26rpx;
+  font-weight: 600;
 }
+
 .tabs {
   display: flex;
   gap: 12rpx;
-  padding: 22rpx 4rpx 10rpx;
+  padding: 22rpx 24rpx 10rpx;
 }
 .tab {
   padding: 12rpx 24rpx;
   border-radius: 999rpx;
-  background: #fff;
-  border: 1rpx solid #e7e1d6;
-  color: #53615d;
+  background: var(--glass);
+  border: 1rpx solid var(--line);
+  color: var(--txt-2);
   font-size: 24rpx;
 }
 .tab.active {
-  background: #b08a3a;
-  border-color: #b08a3a;
+  background: var(--gold-2);
+  border-color: var(--gold-2);
   color: #fff;
 }
+
 .message-list {
-  margin-top: 12rpx;
+  padding: 12rpx 24rpx 0;
 }
-.message-card {
+.li {
   position: relative;
+  background: var(--glass);
+  border: 1rpx solid var(--line);
+  border-radius: 30rpx;
+  padding: 26rpx;
   display: flex;
-  gap: 18rpx;
-  padding: 22rpx;
+  gap: 22rpx;
+  align-items: center;
+  box-shadow: var(--shadow);
   margin-bottom: 18rpx;
-  background: #fff;
-  border: 1rpx solid #e7e1d6;
-  border-radius: 16rpx;
 }
-.message-card.unread {
-  border-color: #e4d2a8;
-  box-shadow: 0 12rpx 28rpx rgba(176,138,58,0.08);
+.li.unread {
+  border-color: var(--line-2);
+  box-shadow: 0 12rpx 28rpx rgba(176, 138, 58, 0.1);
 }
-.type-mark {
-  width: 64rpx;
-  height: 64rpx;
-  flex: 0 0 64rpx;
+.li .av {
+  width: 86rpx;
+  height: 86rpx;
+  border-radius: 24rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 14rpx;
-  background: #f4ecd6;
-  color: #b08a3a;
-  font-size: 26rpx;
-  font-weight: 800;
+  flex: 0 0 86rpx;
 }
-.type-mark.bill {
-  background: #f5eddd;
-  color: #8a6b38;
-}
-.type-mark.appointment {
-  background: #fff2e6;
-  color: #c2410c;
-}
-.message-body {
+.li .c {
   flex: 1;
   min-width: 0;
 }
-.message-head {
-  display: flex;
-  justify-content: space-between;
-  gap: 16rpx;
-  align-items: center;
-}
-.msg-title {
-  flex: 1;
-  color: #1f2a2e;
-  font-size: 29rpx;
-  font-weight: 760;
+.li .c .t {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #241f18;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.li .c .s {
+  font-size: 23rpx;
+  color: var(--txt-3);
+  margin-top: 6rpx;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.msg-time {
-  color: #9aa29f;
-  font-size: 21rpx;
-}
-.msg-content {
-  display: block;
-  margin-top: 12rpx;
-  color: #64706d;
-  font-size: 25rpx;
-  line-height: 1.55;
-}
-.msg-foot {
-  display: flex;
-  gap: 12rpx;
-  margin-top: 16rpx;
-  color: #7b8582;
+.li .rt {
+  text-align: right;
   font-size: 22rpx;
+  color: var(--txt-3);
+  font-weight: 400;
+  flex: 0 0 auto;
 }
-.dot-text {
-  color: #b0791f;
-  font-weight: 700;
+.li .badge {
+  position: absolute;
+  top: 22rpx;
+  right: 24rpx;
+  background: var(--bad);
+  color: #fff;
+  font-size: 18rpx;
+  padding: 4rpx 12rpx;
+  border-radius: 12rpx;
+  line-height: 1.4;
 }
+
 .empty {
   display: flex;
   flex-direction: column;
@@ -264,7 +297,7 @@ onMounted(async () => {
 .bubble {
   width: 92rpx;
   height: 68rpx;
-  border: 5rpx solid #9aa29f;
+  border: 5rpx solid var(--txt-3);
   border-radius: 34rpx;
   position: relative;
   margin-bottom: 28rpx;
@@ -276,10 +309,10 @@ onMounted(async () => {
   bottom: -16rpx;
   width: 24rpx;
   height: 24rpx;
-  border-left: 5rpx solid #9aa29f;
-  border-bottom: 5rpx solid #9aa29f;
+  border-left: 5rpx solid var(--txt-3);
+  border-bottom: 5rpx solid var(--txt-3);
   transform: rotate(-20deg);
-  background: #f6f4ef;
+  background: var(--bg);
 }
 .empty-title {
   color: #1c1812;
@@ -289,7 +322,7 @@ onMounted(async () => {
 .empty-desc {
   max-width: 480rpx;
   margin-top: 12rpx;
-  color: #7b8582;
+  color: var(--txt-2);
   font-size: 24rpx;
   line-height: 1.6;
   text-align: center;
