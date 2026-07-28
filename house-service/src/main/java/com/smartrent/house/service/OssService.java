@@ -2,6 +2,7 @@ package com.smartrent.house.service;
 
 import com.aliyun.oss.OSS;
 import com.aliyun.oss.OSSClientBuilder;
+import com.aliyun.oss.model.CannedAccessControlList;
 import com.aliyun.oss.model.PutObjectRequest;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
@@ -69,6 +70,8 @@ public class OssService {
         try (InputStream inputStream = file.getInputStream()) {
             PutObjectRequest putObjectRequest = new PutObjectRequest(bucketName, objectName, inputStream);
             ossClient.putObject(putObjectRequest);
+            // 上传即设为公共读，避免对象是私有导致浏览器匿名加载 403
+            ossClient.setObjectAcl(bucketName, objectName, CannedAccessControlList.PublicRead);
         }
 
         return urlPrefix + "/" + objectName;
